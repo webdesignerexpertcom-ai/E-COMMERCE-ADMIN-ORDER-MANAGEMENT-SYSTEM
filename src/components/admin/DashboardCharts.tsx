@@ -5,6 +5,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell, Legend
 } from 'recharts';
+import Link from 'next/link';
 
 const data = [
   { name: 'Mon', revenue: 4000, orders: 24 },
@@ -98,9 +99,11 @@ export function DashboardCharts() {
             </div>
           ))}
         </div>
-        <button className="w-full mt-8 py-3 bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-colors">
-          View All Products
-        </button>
+        <Link href="/admin/catalog" className="block mt-8">
+          <button className="w-full py-3 bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-colors">
+            View All Products
+          </button>
+        </Link>
       </div>
     </div>
   );

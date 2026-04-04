@@ -1,13 +1,48 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/admin/Sidebar';
-import { Search, Bell, Mail, User, Command } from 'lucide-react';
+import { Search, Bell, User } from 'lucide-react';
 import { KeyboardShortcuts } from '@/components/admin/KeyboardShortcuts';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    if (pathname === '/admin/login') {
+      setIsChecking(false);
+      return;
+    }
+
+    const authStatus = localStorage.getItem('oms_auth');
+    if (!authStatus) {
+      router.push('/admin/login');
+    } else {
+      setIsAuthenticated(true);
+      setIsChecking(false);
+    }
+  }, [pathname, router]);
+
+  if (pathname === '/admin/login') {
+    return <>{children}</>;
+  }
+
+  if (isChecking || !isAuthenticated) {
+    return (
+       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+       </div>
+    );
+  }
+
   return (
     <div className="flex bg-slate-50 min-h-screen text-slate-900 font-sans selection:bg-indigo-600 selection:text-white">
       <KeyboardShortcuts />

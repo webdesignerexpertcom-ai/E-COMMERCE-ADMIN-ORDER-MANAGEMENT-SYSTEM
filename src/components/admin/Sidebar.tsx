@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Database,
   History,
-  Box
+  Box,
+  AlertTriangle
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ const sidebarItems = [
   { name: 'Orders', icon: ShoppingBag, href: '/admin/orders' },
   { name: 'Catalog', icon: Package, href: '/admin/catalog' },
   { name: 'Inventory Hub', icon: Box, href: '/admin/inventory' },
+  { name: 'Stock Alerts', icon: AlertTriangle, href: '/admin/alerts' },
   { name: 'Customers', icon: Users, href: '/admin/customers' },
   { name: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
   { name: 'Audit Logs', icon: History, href: '/admin/audit' },
@@ -79,7 +81,15 @@ export function Sidebar() {
       </nav>
 
       <div className="p-4 mt-auto border-t border-slate-800">
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-400/5 transition-all duration-200 text-sm font-medium">
+        <button 
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('oms_auth');
+            }
+            window.location.href = '/admin/login';
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-400/5 transition-all duration-200 text-sm font-medium"
+        >
           <LogOut className="w-5 h-5" />
           <span>Exit Admin</span>
         </button>
