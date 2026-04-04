@@ -29,6 +29,29 @@ export default function NewProductListing() {
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   
+  // AI Synthesis State
+  const [isAiMode, setIsAiMode] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleAiGeneration = () => {
+    if(!aiPrompt) return;
+    setIsGenerating(true);
+    // Simulate complex AI Diffusion delay
+    setTimeout(() => {
+        const aiMockSamples = [
+           "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&q=80&w=800",
+           "https://images.unsplash.com/photo-1611078489935-0cb964de46d6?auto=format&fit=crop&q=80&w=800",
+           "https://images.unsplash.com/photo-1608666566023-e91b0568c07e?auto=format&fit=crop&q=80&w=800"
+        ];
+        // Select random asset
+        setPreviewImage(aiMockSamples[Math.floor(Math.random() * aiMockSamples.length)]);
+        setIsGenerating(false);
+        setIsAiMode(false);
+        setAiPrompt('');
+    }, 2500);
+  };
+  
   const [productData, setProductData] = useState({
     name: '',
     description: '',
@@ -269,7 +292,7 @@ export default function NewProductListing() {
                 <p className="text-slate-400 text-sm font-medium italic opacity-80 px-4">Upload high-resolution shots for your storefront display.</p>
              </div>
              
-             <div className="relative z-10 w-full">
+             <div className="relative z-10 w-full space-y-3">
                <input 
                  type="file" 
                  ref={fileInputRef} 
@@ -277,17 +300,61 @@ export default function NewProductListing() {
                  accept="image/*" 
                  onChange={handleImageUpload} 
                />
-               <button 
-                 onClick={() => fileInputRef.current?.click()}
-                 className={cn(
-                   "w-full py-5 border rounded-[28px] text-[10px] font-black uppercase tracking-widest transition-all",
-                   previewImage 
-                     ? "bg-emerald-500 text-white border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.4)]" 
-                     : "bg-white/10 hover:bg-white text-white hover:text-slate-900 border-white/10"
-                 )}
-               >
-                  {previewImage ? "Change Master Asset" : "Select Master Assets"}
-               </button>
+               
+               <AnimatePresence>
+                  {isAiMode && (
+                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mb-4 overflow-hidden">
+                        <div className="p-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-[28px] shadow-lg mb-3">
+                           <div className="bg-slate-900 rounded-[24px] p-2 flex items-center pr-4">
+                              <input 
+                                 type="text" 
+                                 placeholder="Describe the asset for AI..."
+                                 value={aiPrompt}
+                                 onChange={(e) => setAiPrompt(e.target.value)}
+                                 className="w-full bg-transparent text-[11px] text-white px-3 font-medium outline-none placeholder:text-slate-500"
+                                 autoFocus
+                              />
+                              <button 
+                                 onClick={handleAiGeneration}
+                                 disabled={isGenerating}
+                                 className="ml-2 w-8 h-8 rounded-full bg-white text-indigo-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-all text-[8px] font-black"
+                              >
+                                 {isGenerating ? "..." : "GO"}
+                              </button>
+                           </div>
+                        </div>
+                     </motion.div>
+                  )}
+               </AnimatePresence>
+
+               {isGenerating && (
+                 <div className="text-[10px] font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-pink-400 uppercase tracking-widest text-center animate-pulse mb-3">
+                    Synthesizing Assets via Neural Network...
+                 </div>
+               )}
+
+               <div className="flex items-center gap-3 w-full">
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isGenerating}
+                    className={cn(
+                      "flex-1 py-4 border rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all",
+                      previewImage 
+                        ? "bg-slate-800 text-white border-slate-700" 
+                        : "bg-white/10 hover:bg-white text-white hover:text-slate-900 border-white/10"
+                    )}
+                  >
+                     Select Master Assets
+                  </button>
+                  <button 
+                    onClick={() => setIsAiMode(!isAiMode)}
+                    disabled={isGenerating}
+                    className="w-16 py-4 flex items-center justify-center bg-transparent border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/20 rounded-[24px] transition-all shadow-[0_0_20px_rgba(99,102,241,0.1)] hover:shadow-indigo-500/30 group"
+                    title="Generate with Built-in AI"
+                  >
+                    <Zap className="w-5 h-5 group-hover:fill-indigo-400 transition-all font-bold" />
+                  </button>
+               </div>
              </div>
            </section>
 
