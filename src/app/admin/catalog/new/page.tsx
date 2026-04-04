@@ -37,19 +37,24 @@ export default function NewProductListing() {
   const handleAiGeneration = () => {
     if(!aiPrompt) return;
     setIsGenerating(true);
-    // Simulate complex AI Diffusion delay
-    setTimeout(() => {
-        const aiMockSamples = [
-           "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?auto=format&fit=crop&q=80&w=800",
-           "https://images.unsplash.com/photo-1611078489935-0cb964de46d6?auto=format&fit=crop&q=80&w=800",
-           "https://images.unsplash.com/photo-1608666566023-e91b0568c07e?auto=format&fit=crop&q=80&w=800"
-        ];
-        // Select random asset
-        setPreviewImage(aiMockSamples[Math.floor(Math.random() * aiMockSamples.length)]);
-        setIsGenerating(false);
-        setIsAiMode(false);
-        setAiPrompt('');
-    }, 2500);
+    
+    // Real Free AI Generation via Pollinations.ai API
+    const randomSeed = Math.floor(Math.random() * 1000000);
+    const generatedUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(aiPrompt)}?width=800&height=800&nologo=true&seed=${randomSeed}`;
+    
+    // Preload image before revealing to user for a premium seamless feel
+    const img = new Image();
+    img.src = generatedUrl;
+    img.onload = () => {
+       setPreviewImage(generatedUrl);
+       setIsGenerating(false);
+       setIsAiMode(false);
+       setAiPrompt('');
+    };
+    img.onerror = () => {
+       alert("Neural Network overload or blocked prompt. Try another description.");
+       setIsGenerating(false);
+    };
   };
   
   const [productData, setProductData] = useState({
