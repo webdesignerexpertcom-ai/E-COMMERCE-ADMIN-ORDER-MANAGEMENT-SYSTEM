@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { connectDB } from '@/lib/mongoose';
 import Product from '@/models/Product';
 
-// Sample Fallback Data if Database is not connected
-const DUMMY_PRODUCTS = [
+// Sample Fallback Data if Database is not connected (Using Let so we can push to it in demo mode)
+let DUMMY_PRODUCTS = [
   { _id: '1', name: 'Wild Forest Raw Honey', desc: 'Unprocessed & directly from Himalayas', price: 1250.00, oldPrice: 1550.00, tag: '-20%', tagColor: 'bg-rose-500', image: 'https://images.unsplash.com/photo-1587049352847-4d4b1ed74dd4?auto=format&fit=crop&q=80&w=800' },
   { _id: '2', name: 'Extra Virgin Coconut Oil', desc: 'Cold-pressed, unrefined organic oil', price: 850.00, oldPrice: null, tag: 'Bestseller', tagColor: 'bg-indigo-500', image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=800' },
   { _id: '3', name: 'California Premium Almonds', desc: 'Rich in antioxidants & naturally sweet', price: 950.00, oldPrice: 1100.00, tag: '-15%', tagColor: 'bg-rose-500', image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?auto=format&fit=crop&q=80&w=800' },
@@ -33,11 +33,21 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const db = await connectDB();
+    const body = await req.json();
+
     if (!db) {
-      return NextResponse.json({ success: false, error: 'Database not connected. Please add MONGODB_URI to .env.local.' }, { status: 500 });
+      // In-Memory Fallback: Push to DUMMY array instead of throwing an error.
+      const simulatedProduct = {
+         _id: `temp_${Math.random()}`,
+         ...body
+      };
+      
+      // Add to the front so it appears immediately on top of catalog and landing page
+      DUMMY_PRODUCTS.unshift(simulatedProduct);
+      
+      return NextResponse.json({ success: true, data: simulatedProduct }, { status: 201 });
     }
 
-    const body = await req.json();
     const product = await Product.create(body);
     
     return NextResponse.json({ success: true, data: product }, { status: 201 });
