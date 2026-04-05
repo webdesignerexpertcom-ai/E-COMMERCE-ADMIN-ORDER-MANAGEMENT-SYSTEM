@@ -90,8 +90,10 @@ export default function NewProductListing() {
     });
     setTimeout(() => {
         setIsSuccessOpen(false);
+        router.refresh(); // Invalidate route cache to ensure absolute freshness
         router.push('/admin/catalog');
     }, 2500);
+
   };
 
   const handlePublish = async () => {
