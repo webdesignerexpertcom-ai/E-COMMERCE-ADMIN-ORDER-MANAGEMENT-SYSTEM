@@ -12,9 +12,7 @@ import {
   Globe,
   CheckCircle2,
   MessageSquare,
-  Key,
-  Phone,
-  ArrowLeft
+  Key
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -27,9 +25,6 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [whatsappStep, setWhatsappStep] = useState<0 | 1 | 2>(0); // 0 = not using WA, 1 = entering phone, 2 = entering code
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
@@ -102,44 +97,6 @@ export default function AdminLoginPage() {
     }
   };
 
-  const handleWhatsAppAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMethod('email'); // reuse loader
-    setMessage(null);
-
-    const formattedPhone = phone.startsWith('+') ? phone : `+91${phone}`;
-
-    if (whatsappStep === 1) {
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: formattedPhone,
-        options: {
-          channel: 'whatsapp',
-        }
-      });
-
-      if (error) {
-        setMessage({ text: error.message, type: 'error' });
-      } else {
-        setMessage({ text: "WhatsApp code sent! Check your app.", type: 'success' });
-        setWhatsappStep(2);
-      }
-    } else if (whatsappStep === 2) {
-      const { data, error } = await supabase.auth.verifyOtp({
-        phone: formattedPhone,
-        token: otp,
-        type: 'sms',
-      });
-
-      if (error) {
-        setMessage({ text: error.message, type: 'error' });
-      } else {
-        localStorage.setItem('oms_auth', 'true');
-        router.push('/admin');
-      }
-    }
-    setLoading(false);
-  };
 
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 relative overflow-hidden">
@@ -179,155 +136,90 @@ export default function AdminLoginPage() {
 
            {/* Identity Commands */}
            <div className="space-y-6">
-              {whatsappStep === 0 ? (
-                <>
-                  <button 
-                     onClick={(e) => { e.preventDefault(); localStorage.setItem('oms_auth_demo', 'true'); router.push('/admin'); }}
-                     className="w-full py-5 rounded-[28px] border-2 border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center gap-4 text-indigo-400 text-sm font-black uppercase tracking-[0.1em] hover:bg-indigo-500 hover:text-white transition-all active:scale-95 group relative overflow-hidden mb-4"
-                  >
-                     <ShieldCheck className="w-5 h-5 text-indigo-400 group-hover:text-white transition-colors" />
-                     1-Click Demo Login (Bypass)
-                     <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                  </button>
-                  
-                  <button 
-                     onClick={() => handleOAuth('google')}
-                     disabled={loading}
-                     className={cn(
-                        "w-full py-5 rounded-[28px] border-2 border-white/10 flex items-center justify-center gap-4 text-white text-sm font-black uppercase tracking-[0.1em] hover:bg-white hover:text-slate-900 transition-all active:scale-95 group relative overflow-hidden mb-4",
-                        loading && method === 'google' ? "bg-white text-slate-900" : ""
-                     )}
-                  >
-                     {loading && method === 'google' ? (
-                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full" />
-                     ) : (
-                        <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center p-1 group-hover:bg-slate-900 transition-colors">
-                           <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" className="w-full" />
-                        </div>
-                     )}
-                     {loading && method === 'google' ? 'Redirecting...' : 'Authenticate with Google'}
-                     <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                  </button>
+              <button 
+                 onClick={(e) => { e.preventDefault(); localStorage.setItem('oms_auth_demo', 'true'); router.push('/admin'); }}
+                 className="w-full py-5 rounded-[28px] border-2 border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center gap-4 text-indigo-400 text-sm font-black uppercase tracking-[0.1em] hover:bg-indigo-500 hover:text-white transition-all active:scale-95 group relative overflow-hidden mb-4"
+              >
+                 <ShieldCheck className="w-5 h-5 text-indigo-400 group-hover:text-white transition-colors" />
+                 1-Click Demo Login (Bypass)
+                 <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </button>
+              
+              <button 
+                 onClick={() => handleOAuth('google')}
+                 disabled={loading}
+                 className={cn(
+                    "w-full py-5 rounded-[28px] border-2 border-white/10 flex items-center justify-center gap-4 text-white text-sm font-black uppercase tracking-[0.1em] hover:bg-white hover:text-slate-900 transition-all active:scale-95 group relative overflow-hidden mb-4",
+                    loading && method === 'google' ? "bg-white text-slate-900" : ""
+                 )}
+              >
+                 {loading && method === 'google' ? (
+                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full" />
+                 ) : (
+                    <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center p-1 group-hover:bg-slate-900 transition-colors">
+                       <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" className="w-full" />
+                    </div>
+                 )}
+                 {loading && method === 'google' ? 'Redirecting...' : 'Authenticate with Google'}
+                 <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+              </button>
 
-                  <button 
-                     onClick={() => setWhatsappStep(1)}
-                     className="w-full py-5 rounded-[28px] border-2 border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center gap-4 text-emerald-400 text-sm font-black uppercase tracking-[0.1em] hover:bg-emerald-500 hover:text-white transition-all active:scale-95 group relative overflow-hidden"
-                  >
-                     <MessageSquare className="w-5 h-5 text-emerald-400 group-hover:text-white transition-colors" />
-                     Login via WhatsApp
-                     <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-                  </button>
+              <div className="flex items-center gap-4 px-6 py-2">
+                 <div className="h-[1px] bg-white/10 flex-1" />
+                 <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">OR SECURE DIRECT ACCESS</span>
+                 <div className="h-[1px] bg-white/10 flex-1" />
+              </div>
 
-                  <div className="flex items-center gap-4 px-6 py-2">
-                     <div className="h-[1px] bg-white/10 flex-1" />
-                     <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">OR SECURE DIRECT ACCESS</span>
-                     <div className="h-[1px] bg-white/10 flex-1" />
-                  </div>
-
-                  <form onSubmit={handleLogin} className="space-y-4">
-                     <div className="relative group">
-                        <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" />
-                        <input 
-                           type="email" 
-                           required
-                           placeholder="Corporate Email"
-                           value={email}
-                           onChange={(e) => setEmail(e.target.value)}
-                           className="w-full pl-14 pr-6 py-5 bg-white/5 border-2 border-white/10 rounded-[28px] text-white text-md font-bold focus:border-indigo-600 focus:bg-white/10 transition-all outline-none"
-                        />
-                     </div>
-                     <div className="relative group">
-                        <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" />
-                        <input 
-                           type={showPassword ? "text" : "password"} 
-                           required
-                           placeholder="Secret Password"
-                           value={password}
-                           onChange={(e) => setPassword(e.target.value)}
-                           className="w-full pl-14 pr-14 py-5 bg-white/5 border-2 border-white/10 rounded-[28px] text-white text-md font-bold focus:border-indigo-600 focus:bg-white/10 transition-all outline-none"
-                        />
-                        <button 
-                          type="button" 
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-6 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
-                        >
-                          {showPassword ? <Zap className="w-4 h-4 fill-white" /> : <ShieldCheck className="w-4 h-4" />}
-                        </button>
-                     </div>
-                     
-                     <div className="flex gap-3">
-                       <button 
-                          type="submit"
-                          disabled={loading}
-                          className="flex-[2] py-5 bg-indigo-600 text-white rounded-[28px] text-sm font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-600/30 hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-3"
-                       >
-                          {loading && method === 'email' ? 'Checking...' : 'Sign In'} <CheckCircle2 className="w-4 h-4" />
-                       </button>
-                       <button 
-                          type="button"
-                          disabled={loading}
-                          onClick={handleMagicLink}
-                          title="Send Magic Link to Email"
-                          className="flex-1 py-5 bg-white/5 border-2 border-white/10 text-white rounded-[28px] text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all active:scale-95"
-                       >
-                          {loading && method === 'magic-link' ? '...' : 'Magic'}
-                       </button>
-                     </div>
-                  </form>
-                </>
-              ) : (
-                <form onSubmit={handleWhatsAppAuth} className="space-y-4">
-                  <div className="flex items-center gap-3 mb-6">
+              <form onSubmit={handleLogin} className="space-y-4">
+                 <div className="relative group">
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" />
+                    <input 
+                       type="email" 
+                       required
+                       placeholder="Corporate Email"
+                       value={email}
+                       onChange={(e) => setEmail(e.target.value)}
+                       className="w-full pl-14 pr-6 py-5 bg-white/5 border-2 border-white/10 rounded-[28px] text-white text-md font-bold focus:border-indigo-600 focus:bg-white/10 transition-all outline-none"
+                    />
+                 </div>
+                 <div className="relative group">
+                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" />
+                    <input 
+                       type={showPassword ? "text" : "password"} 
+                       required
+                       placeholder="Secret Password"
+                       value={password}
+                       onChange={(e) => setPassword(e.target.value)}
+                       className="w-full pl-14 pr-14 py-5 bg-white/5 border-2 border-white/10 rounded-[28px] text-white text-md font-bold focus:border-indigo-600 focus:bg-white/10 transition-all outline-none"
+                    />
                     <button 
                       type="button" 
-                      onClick={() => setWhatsappStep(0)}
-                      className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-6 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
                     >
-                      <ArrowLeft className="w-5 h-5" />
+                      {showPassword ? <Zap className="w-4 h-4 fill-white" /> : <ShieldCheck className="w-4 h-4" />}
                     </button>
-                    <div>
-                      <h3 className="text-white font-bold text-lg leading-tight">WhatsApp Access</h3>
-                      <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest">End-to-End Encrypted</p>
-                    </div>
-                  </div>
-
-                  {whatsappStep === 1 && (
-                    <div className="relative group">
-                       <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50 group-focus-within:text-emerald-400 transition-colors" />
-                       <input 
-                          type="tel" 
-                          required
-                          placeholder="WhatsApp Number (e.g. 9876543210)"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="w-full pl-14 pr-6 py-5 bg-white/5 border-2 border-white/10 rounded-[28px] text-white text-md font-bold focus:border-emerald-500 focus:bg-emerald-500/5 transition-all outline-none"
-                       />
-                    </div>
-                  )}
-
-                  {whatsappStep === 2 && (
-                    <div className="relative group">
-                       <Key className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500/50 group-focus-within:text-emerald-400 transition-colors" />
-                       <input 
-                          type="text" 
-                          required
-                          placeholder="Enter 6-Digit Code"
-                          value={otp}
-                          onChange={(e) => setOtp(e.target.value)}
-                          className="w-full pl-14 pr-6 py-5 bg-white/5 border-2 border-white/10 rounded-[28px] text-white text-xl tracking-widest font-black focus:border-emerald-500 focus:bg-emerald-500/5 transition-all outline-none text-center"
-                       />
-                    </div>
-                  )}
-
-                  <button 
-                     type="submit"
-                     disabled={loading}
-                     className="w-full py-5 bg-emerald-500 text-white rounded-[28px] text-sm font-black uppercase tracking-[0.2em] shadow-2xl shadow-emerald-500/30 hover:bg-emerald-400 transition-all active:scale-95 flex items-center justify-center gap-3"
-                  >
-                     {loading ? 'Verifying...' : whatsappStep === 1 ? 'Send Secure Code' : 'Verify & Login'} <CheckCircle2 className="w-4 h-4" />
-                  </button>
-                </form>
-              )}
+                 </div>
+                 
+                 <div className="flex gap-3">
+                   <button 
+                      type="submit"
+                      disabled={loading}
+                      className="flex-[2] py-5 bg-indigo-600 text-white rounded-[28px] text-sm font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-600/30 hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-3"
+                   >
+                      {loading && method === 'email' ? 'Checking...' : 'Sign In'} <CheckCircle2 className="w-4 h-4" />
+                   </button>
+                   <button 
+                      type="button"
+                      disabled={loading}
+                      onClick={handleMagicLink}
+                      title="Send Magic Link to Email"
+                      className="flex-1 py-5 bg-white/5 border-2 border-white/10 text-white rounded-[28px] text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all active:scale-95"
+                   >
+                      {loading && method === 'magic-link' ? '...' : 'Magic'}
+                   </button>
+                 </div>
+              </form>
            </div>
 
            {/* Compliance / Footer Deck */}
