@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, ArrowRight, ShieldCheck, Search, Leaf, Truck, Shield, Menu, X, Star, MessageCircle, Trash2, Heart, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 const categories = [
   { name: 'Pure Honey', items: '12 Items', icon: '🍯', border: 'border-[#FCD34D]', bg: 'bg-[#FFFBEB]', hover: 'hover:border-[#F59E0B] hover:shadow-[#FCD34D]/20' },
@@ -23,22 +24,50 @@ export default function ProEcoStorefront() {
   
   const [products, setProducts] = useState<any[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch('/api/products', { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success) {
+        setIsDemoMode(data.isDemo || false);
+        const mapped = data.data.map((p: any) => ({
+          ...p,
+          id: p._id || p.id
+        }));
+        setProducts(mapped.slice(0, 8));
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
 
   React.useEffect(() => {
-    fetch('/api/products')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          setProducts(data.data.slice(0, 4)); // Only show top 4 featured
-        }
+    fetchProducts();
+
+    // REAL-TIME SYNC: Listen for database changes
+    const channel = supabase
+      .channel('public:products')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+        console.log('Real-time update received:', payload);
+        fetchProducts(); // Refresh the list when anything changes
       })
-      .finally(() => setIsLoadingProducts(false));
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
+
 
   const addToCart = (product: any) => {
     setCart([...cart, product]);
     setIsCartOpen(true);
   };
+
 
   const removeFromCart = (index: number) => {
     const newCart = [...cart];

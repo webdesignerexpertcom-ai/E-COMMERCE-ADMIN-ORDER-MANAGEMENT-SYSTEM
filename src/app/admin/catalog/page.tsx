@@ -21,13 +21,9 @@ import {
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 
-const initialProducts = [
-  { id: '1', name: 'Premium Espresso Roast', sku: 'COF-PRM-250', category: 'Coffee', price: '$24.00', stock: 140, variants: 4, status: 'Active' },
-  { id: '2', name: 'Ceramic Pour Over Kit', sku: 'ACC-CER-001', category: 'Accessories', price: '$45.00', stock: 28, variants: 2, status: 'Active' },
-  { id: '3', name: 'Double Wall Glass Mug', sku: 'GLA-DOU-350', category: 'Drinkware', price: '$18.00', stock: 8, variants: 0, status: 'Low Stock' },
-  { id: '4', name: 'Milk Frother Pro Max', sku: 'APP-FRO-900', category: 'Appliances', price: '$85.00', stock: 0, variants: 1, status: 'Out of Stock' },
-];
+const initialProducts: any[] = [];
 
 export default function CatalogPage() {
   const [view, setView] = useState<'table' | 'grid'>('table');
@@ -37,8 +33,8 @@ export default function CatalogPage() {
   const [toastMessage, setToastMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  React.useEffect(() => {
-    fetch('/api/products')
+  const fetchProducts = () => {
+    fetch('/api/products', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data.length > 0) {
@@ -53,9 +49,28 @@ export default function CatalogPage() {
              status: p.status === 'active' ? 'Active' : (p.stock > 0 ? 'Active' : 'Out of Stock')
            }));
            setProducts(mappedProducts);
+        } else if (data.success && data.data.length === 0) {
+           setProducts([]);
         }
       })
       .finally(() => setIsLoading(false));
+  };
+
+  React.useEffect(() => {
+    fetchProducts();
+
+    // REAL-TIME SYNC
+    const channel = supabase
+      .channel('admin:products')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, (payload) => {
+        console.log('Admin Real-time update:', payload);
+        fetchProducts(); 
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const triggerToast = (msg: string) => {
@@ -64,10 +79,22 @@ export default function CatalogPage() {
      setTimeout(() => setIsToastOpen(false), 3000);
   };
 
-  const deleteProduct = (id: string, name: string) => {
-     if(confirm(`Are you sure you want to completely remove ${name} from the catalog?`)) {
-        setProducts(products.filter(p => p.id !== id));
-        triggerToast(`Asset ${name} destroyed.`);
+  const deleteProduct = async (id: string, name: string) => {
+     if(!confirm(`Are you sure you want to completely remove ${name} from the catalog?`)) return;
+     
+     try {
+        const res = await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if(data.success) {
+           triggerToast(`Asset ${name} destroyed.`);
+           // Real-time will handle the list update, but we can also do it manually for immediate feedback
+           setProducts(prev => prev.filter(p => p.id !== id));
+        } else {
+           alert("Delete failed: " + data.error);
+        }
+     } catch (err) {
+        console.error("Delete error:", err);
+        alert("Network error during deletion.");
      }
   };
 

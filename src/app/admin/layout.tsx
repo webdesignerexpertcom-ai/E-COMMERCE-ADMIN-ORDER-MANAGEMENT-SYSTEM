@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/admin/Sidebar';
 import { Search, Bell, User } from 'lucide-react';
 import { KeyboardShortcuts } from '@/components/admin/KeyboardShortcuts';
 import { usePathname, useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
 export default function AdminLayout({
   children,
@@ -15,20 +16,40 @@ export default function AdminLayout({
   const router = useRouter();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [userName, setUserName] = useState('Sarah Williams');
 
   useEffect(() => {
-    if (pathname === '/admin/login') {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session && pathname !== '/admin/login') {
+        router.push('/admin/login');
+      } else if (session) {
+        setIsAuthenticated(true);
+        if (session.user.user_metadata?.full_name) {
+          setUserName(session.user.user_metadata.full_name);
+        } else if (session.user.email) {
+          setUserName(session.user.email.split('@')[0]);
+        }
+      }
+      
       setIsChecking(false);
-      return;
-    }
+    };
 
-    const authStatus = localStorage.getItem('oms_auth');
-    if (!authStatus) {
-      router.push('/admin/login');
-    } else {
-      setIsAuthenticated(true);
-      setIsChecking(false);
-    }
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session && pathname !== '/admin/login') {
+        router.push('/admin/login');
+        setIsAuthenticated(false);
+      } else if (session) {
+        setIsAuthenticated(true);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [pathname, router]);
 
   if (pathname === '/admin/login') {
@@ -79,7 +100,7 @@ export default function AdminLayout({
             
             <div className="flex items-center gap-3 group cursor-pointer pl-4 border-l border-slate-100">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-black leading-tight group-hover:text-indigo-600 transition-colors">Sarah Williams</p>
+                <p className="text-sm font-black leading-tight group-hover:text-indigo-600 transition-colors uppercase">{userName}</p>
                 <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Enterprise Tier</p>
               </div>
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 p-0.5 shadow-lg shadow-indigo-600/20 transform group-hover:rotate-6 transition-all duration-300">

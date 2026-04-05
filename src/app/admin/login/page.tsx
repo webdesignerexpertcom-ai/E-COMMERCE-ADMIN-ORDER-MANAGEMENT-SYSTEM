@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Database, 
@@ -11,26 +11,90 @@ import {
   Lock,
   Globe,
   CheckCircle2,
-  MessageSquare
+  MessageSquare,
+  Key
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [method, setMethod] = useState<'google' | 'whatsapp' | 'email' | null>(null);
+  const [method, setMethod] = useState<'google' | 'magic-link' | 'email' | null>(null);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
 
-  const handleLogin = (selectedMethod: 'google' | 'email' | 'whatsapp') => {
-    setLoading(true);
-    setMethod(selectedMethod);
-    // Simulating Secure Auth Handshake
-    setTimeout(() => {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('oms_auth', 'true');
-        }
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        localStorage.setItem('oms_auth', 'true');
         router.push('/admin');
-    }, 2000);
+      }
+    };
+    checkUser();
+  }, [router]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setMethod('email');
+    setMessage(null);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setMessage({ text: error.message, type: 'error' });
+      setLoading(false);
+    } else {
+      localStorage.setItem('oms_auth', 'true');
+      router.push('/admin');
+    }
+  };
+
+  const handleMagicLink = async () => {
+    if (!email) {
+      setMessage({ text: "Please enter your email first", type: 'error' });
+      return;
+    }
+    setLoading(true);
+    setMethod('magic-link');
+    
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin + '/admin',
+      }
+    });
+
+    if (error) {
+      setMessage({ text: error.message, type: 'error' });
+    } else {
+      setMessage({ text: "Check your email for the login link!", type: 'success' });
+    }
+    setLoading(false);
+  };
+
+  const handleOAuth = async (provider: 'google') => {
+    setLoading(true);
+    setMethod('google');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: window.location.origin + '/admin',
+      }
+    });
+    if (error) {
+      setMessage({ text: error.message, type: 'error' });
+      setLoading(false);
+    }
   };
 
   return (
@@ -45,7 +109,7 @@ export default function AdminLoginPage() {
            className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-[64px] p-12 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden relative"
         >
            {/* Top Header Deck */}
-           <div className="flex flex-col items-center text-center mb-12">
+           <div className="flex flex-col items-center text-center mb-10">
               <motion.div 
                  whileHover={{ scale: 1.1, rotate: 10 }}
                  className="w-20 h-20 bg-indigo-600 rounded-[32px] flex items-center justify-center mb-6 shadow-2xl shadow-indigo-600/40 border-2 border-white/20"
@@ -56,10 +120,23 @@ export default function AdminLoginPage() {
               <p className="text-slate-400 font-medium italic opacity-80 uppercase tracking-widest text-[10px]">Enterprise Order Management System</p>
            </div>
 
+           {message && (
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.95 }}
+               animate={{ opacity: 1, scale: 1 }}
+               className={cn(
+                 "mb-8 p-4 rounded-2xl text-xs font-bold text-center border",
+                 message.type === 'success' ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+               )}
+             >
+               {message.text}
+             </motion.div>
+           )}
+
            {/* Identity Commands */}
            <div className="space-y-6">
               <button 
-                 onClick={() => handleLogin('google')}
+                 onClick={() => handleOAuth('google')}
                  disabled={loading}
                  className={cn(
                     "w-full py-5 rounded-[28px] border-2 border-white/10 flex items-center justify-center gap-4 text-white text-sm font-black uppercase tracking-[0.1em] hover:bg-white hover:text-slate-900 transition-all active:scale-95 group relative overflow-hidden",
@@ -73,49 +150,66 @@ export default function AdminLoginPage() {
                        <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" className="w-full" />
                     </div>
                  )}
-                 {loading && method === 'google' ? 'Establishing Handshake...' : 'Authenticate with Google'}
+                 {loading && method === 'google' ? 'Redirecting...' : 'Authenticate with Google'}
                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-              </button>
-
-              <button 
-                 onClick={() => handleLogin('whatsapp')}
-                 disabled={loading}
-                 className={cn(
-                    "w-full py-5 rounded-[28px] border-2 border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center gap-4 text-emerald-400 text-sm font-black uppercase tracking-[0.1em] hover:bg-emerald-500 hover:text-white transition-all active:scale-95 group relative overflow-hidden",
-                    loading && method === 'whatsapp' ? "bg-emerald-500 text-white" : ""
-                 )}
-              >
-                 {loading && method === 'whatsapp' ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
-                 ) : (
-                    <MessageSquare className="w-5 h-5" />
-                 )}
-                 {loading && method === 'whatsapp' ? 'Sending OTP...' : 'WhatsApp OTP Login'}
               </button>
 
               <div className="flex items-center gap-4 px-6 py-2">
                  <div className="h-[1px] bg-white/10 flex-1" />
-                 <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">OR IDENTITY BRIDGE</span>
+                 <span className="text-[10px] font-black text-white/30 uppercase tracking-[0.3em]">SECURE DIRECT ACCESS</span>
                  <div className="h-[1px] bg-white/10 flex-1" />
               </div>
 
-              <div className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4">
                  <div className="relative group">
                     <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" />
                     <input 
                        type="email" 
-                       placeholder="Corporate Email Address"
+                       required
+                       placeholder="Corporate Email"
+                       value={email}
+                       onChange={(e) => setEmail(e.target.value)}
                        className="w-full pl-14 pr-6 py-5 bg-white/5 border-2 border-white/10 rounded-[28px] text-white text-md font-bold focus:border-indigo-600 focus:bg-white/10 transition-all outline-none"
                     />
                  </div>
-                 <button 
-                    onClick={() => handleLogin('email')}
-                    disabled={loading}
-                    className="w-full py-5 bg-indigo-600 text-white rounded-[28px] text-sm font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-600/30 hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-3"
-                 >
-                    {loading && method === 'email' ? 'Verifying...' : 'Continue with Email'} <Zap className="w-4 h-4 fill-white" />
-                 </button>
-              </div>
+                 <div className="relative group">
+                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 group-focus-within:text-indigo-400 transition-colors" />
+                    <input 
+                       type={showPassword ? "text" : "password"} 
+                       required
+                       placeholder="Secret Password"
+                       value={password}
+                       onChange={(e) => setPassword(e.target.value)}
+                       className="w-full pl-14 pr-14 py-5 bg-white/5 border-2 border-white/10 rounded-[28px] text-white text-md font-bold focus:border-indigo-600 focus:bg-white/10 transition-all outline-none"
+                    />
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-6 top-1/2 -translate-y-1/2 text-white/20 hover:text-white transition-colors"
+                    >
+                      {showPassword ? <Zap className="w-4 h-4 fill-white" /> : <ShieldCheck className="w-4 h-4" />}
+                    </button>
+                 </div>
+                 
+                 <div className="flex gap-3">
+                   <button 
+                      type="submit"
+                      disabled={loading}
+                      className="flex-[2] py-5 bg-indigo-600 text-white rounded-[28px] text-sm font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-600/30 hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-3"
+                   >
+                      {loading && method === 'email' ? 'Checking...' : 'Sign In'} <CheckCircle2 className="w-4 h-4" />
+                   </button>
+                   <button 
+                      type="button"
+                      disabled={loading}
+                      onClick={handleMagicLink}
+                      title="Send Magic Link to Email"
+                      className="flex-1 py-5 bg-white/5 border-2 border-white/10 text-white rounded-[28px] text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-slate-900 transition-all active:scale-95"
+                   >
+                      {loading && method === 'magic-link' ? '...' : 'Magic'}
+                   </button>
+                 </div>
+              </form>
            </div>
 
            {/* Compliance / Footer Deck */}
@@ -150,3 +244,4 @@ export default function AdminLoginPage() {
     </div>
   );
 }
+

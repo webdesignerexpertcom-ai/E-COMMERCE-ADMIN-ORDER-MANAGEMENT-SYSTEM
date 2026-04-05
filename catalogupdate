@@ -1,0 +1,155 @@
+Build a full-stack E-commerce system with real-time synchronization between Admin Panel and User Website.
+
+TECH STACK:
+- Frontend: React + Tailwind CSS
+- Backend: Node.js + Express
+- Database: MongoDB
+- API Layer: REST + MCP Server (Model Context Protocol style API gateway)
+- Optional: Socket.io for real-time updates
+
+--------------------------------------------------
+
+SYSTEM ARCHITECTURE:
+
+Admin Panel → MCP Server → Backend API → Database → Frontend (Landing + Catalog)
+
+--------------------------------------------------
+
+CORE REQUIREMENT (IMPORTANT):
+
+When admin:
+- Adds product
+- Updates product
+- Deletes product
+
+THEN:
+- Changes must instantly reflect in:
+  1. Product Catalog Page
+  2. Landing Page Featured Products
+  3. Product Details Page
+
+--------------------------------------------------
+
+BACKEND (API DESIGN):
+
+Create REST APIs:
+
+POST   /api/products        → Add product
+GET    /api/products        → Get all products
+GET    /api/products/:id    → Get single product
+PUT    /api/products/:id    → Update product
+DELETE /api/products/:id    → Delete product
+
+--------------------------------------------------
+
+DATABASE SCHEMA:
+
+Product:
+- name
+- price
+- category
+- stock
+- status
+- image
+- createdAt
+
+--------------------------------------------------
+
+MCP SERVER (API GATEWAY LAYER):
+
+- Acts as middleware between frontend and backend
+- Handles:
+  - API routing
+  - Data formatting
+  - Caching (optional)
+  - Authentication (admin)
+
+Example:
+Frontend → MCP → Backend → DB
+
+--------------------------------------------------
+
+FRONTEND LOGIC (AUTO UPDATE):
+
+1. Landing Page:
+- Fetch featured products from API
+
+2. Product Page:
+- Fetch all products dynamically
+
+3. Use React useEffect:
+
+useEffect(() => {
+  fetch("/api/products")
+    .then(res => res.json())
+    .then(data => setProducts(data));
+}, []);
+
+--------------------------------------------------
+
+REAL-TIME UPDATE (ADVANCED):
+
+Use Socket.io:
+
+Backend:
+- Emit event when product updated
+
+Frontend:
+- Listen to event and refresh UI
+
+Example:
+socket.on("productUpdated", () => fetchProducts());
+
+--------------------------------------------------
+
+ADMIN PANEL:
+
+1. Login (JWT Auth)
+
+2. Product Management:
+- Add product form
+- Edit product form
+- Delete button
+
+3. On submit:
+- Call API
+- Show success toast
+- Trigger UI refresh
+
+--------------------------------------------------
+
+UI/UX REQUIREMENTS:
+
+- Modern Shopify-like UI
+- Green eco theme
+- Responsive design
+- Product cards with:
+  - Image
+  - Price
+  - Discount badge
+  - Add to cart
+
+--------------------------------------------------
+
+DATA FLOW:
+
+Admin Action → API → Database Update → 
+Frontend Fetch / Socket Event → UI Update
+
+--------------------------------------------------
+
+EXTRA FEATURES:
+
+- Search & filter
+- Low stock alert
+- Category filtering
+- Loading skeletons
+- Toast notifications
+
+--------------------------------------------------
+
+DELIVERABLE:
+
+- Fully connected frontend + backend
+- Real-time synced UI
+- Clean architecture

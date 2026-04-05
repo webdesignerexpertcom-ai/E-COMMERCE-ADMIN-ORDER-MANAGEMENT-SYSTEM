@@ -122,14 +122,13 @@ export default function NewProductListing() {
       if(data.success) {
         triggerSuccess();
       } else {
-        alert("Database connection required to save. " + (data.error || ""));
-        // Graceful fallback animation for demo mode if db absent
-        triggerSuccess();
+        alert("Action Failed: " + (data.error || "Unknown server error"));
       }
-    } catch(err) {
-      console.warn("API not reachable yet", err);
-      triggerSuccess();
+    } catch(err: any) {
+      console.error("API call failed", err);
+      alert("Network error or server unreachable. Check your backend status.");
     }
+
   };
 
   return (
@@ -380,12 +379,17 @@ export default function NewProductListing() {
                 </div>
                 <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 hover:border-indigo-100 transition-all">
                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 opacity-70">Visibility Status</p>
-                   <select className="w-full bg-transparent text-sm font-black text-slate-900 outline-none cursor-pointer">
+                   <select 
+                      value={productData.status}
+                      onChange={(e) => setProductData({...productData, status: e.target.value})}
+                      className="w-full bg-transparent text-sm font-black text-slate-900 outline-none cursor-pointer"
+                   >
                       <option value="active">Live in Store</option>
                       <option value="draft">Draft Protocol</option>
                       <option value="hidden">Admin Only</option>
                    </select>
                 </div>
+
              </div>
           </section>
         </div>
