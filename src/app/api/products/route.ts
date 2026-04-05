@@ -27,10 +27,10 @@ export async function GET() {
       name: p.name,
       desc: p.description,
       price: p.price,
-      oldPrice: p.old_price,
+      oldPrice: p.discount_price,
       tag: p.tag,
       tagColor: p.tag_color,
-      image: p.image,
+      image: p.images?.[0] || '',
       status: p.status
     }));
 
@@ -51,15 +51,19 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     // Map frontend body to Supabase columns
+    // Generate slug from name
+    const slug = body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(Math.random() * 1000);
+
+    // Map frontend body to REAL Supabase columns
     const productToCreate = {
       name: body.name,
+      slug: slug,
       description: body.description,
       price: body.price,
-      old_price: body.oldPrice,
-      category: body.category || 'Organics',
-      stock: body.stock || 0,
-      image: body.image,
-      sku: body.sku,
+      discount_price: body.oldPrice,
+      stock_quantity: body.stock || 0,
+      images: body.image ? [body.image] : [],
+      sku: body.sku || `SKU-${Math.floor(Math.random() * 10000)}`,
       tag: body.tag || 'New',
       tag_color: body.tag_color || 'bg-emerald-500',
       status: body.status || 'active'
@@ -94,9 +98,16 @@ export async function PUT(req: Request) {
       return NextResponse.json({ success: false, error: 'Product ID is required for updates' }, { status: 400 });
     }
 
+    // Map update object to REAL Supabase columns
+    const mappedUpdates: any = { ...updates };
+    if (updates.oldPrice !== undefined) { mappedUpdates.discount_price = updates.oldPrice; delete mappedUpdates.oldPrice; }
+    if (updates.stock !== undefined) { mappedUpdates.stock_quantity = updates.stock; delete mappedUpdates.stock; }
+    if (updates.image !== undefined) { mappedUpdates.images = [updates.image]; delete mappedUpdates.image; }
+    if (updates.desc !== undefined) { mappedUpdates.description = updates.desc; delete mappedUpdates.desc; }
+
     const { data: product, error } = await supabase
       .from('products')
-      .update(updates)
+      .update(mappedUpdates)
       .eq('id', id)
       .select()
       .single();
