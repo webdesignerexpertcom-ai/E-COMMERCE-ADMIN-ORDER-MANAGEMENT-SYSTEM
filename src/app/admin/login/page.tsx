@@ -182,6 +182,34 @@ export default function AdminLoginPage() {
               {whatsappStep === 0 ? (
                 <>
                   <button 
+                     onClick={(e) => { e.preventDefault(); localStorage.setItem('oms_auth_demo', 'true'); router.push('/admin'); }}
+                     className="w-full py-5 rounded-[28px] border-2 border-indigo-500/30 bg-indigo-500/10 flex items-center justify-center gap-4 text-indigo-400 text-sm font-black uppercase tracking-[0.1em] hover:bg-indigo-500 hover:text-white transition-all active:scale-95 group relative overflow-hidden mb-4"
+                  >
+                     <ShieldCheck className="w-5 h-5 text-indigo-400 group-hover:text-white transition-colors" />
+                     1-Click Demo Login (Bypass)
+                     <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  </button>
+                  
+                  <button 
+                     onClick={() => handleOAuth('google')}
+                     disabled={loading}
+                     className={cn(
+                        "w-full py-5 rounded-[28px] border-2 border-white/10 flex items-center justify-center gap-4 text-white text-sm font-black uppercase tracking-[0.1em] hover:bg-white hover:text-slate-900 transition-all active:scale-95 group relative overflow-hidden mb-4",
+                        loading && method === 'google' ? "bg-white text-slate-900" : ""
+                     )}
+                  >
+                     {loading && method === 'google' ? (
+                        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full" />
+                     ) : (
+                        <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center p-1 group-hover:bg-slate-900 transition-colors">
+                           <img src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" className="w-full" />
+                        </div>
+                     )}
+                     {loading && method === 'google' ? 'Redirecting...' : 'Authenticate with Google'}
+                     <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                  </button>
+
+                  <button 
                      onClick={() => setWhatsappStep(1)}
                      className="w-full py-5 rounded-[28px] border-2 border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center gap-4 text-emerald-400 text-sm font-black uppercase tracking-[0.1em] hover:bg-emerald-500 hover:text-white transition-all active:scale-95 group relative overflow-hidden"
                   >

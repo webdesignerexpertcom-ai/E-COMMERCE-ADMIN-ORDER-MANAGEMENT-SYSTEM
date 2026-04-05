@@ -20,6 +20,15 @@ export default function AdminLayout({
 
   useEffect(() => {
     const checkAuth = async () => {
+      // 1. Check for Demo Auth Bypass first
+      if (localStorage.getItem('oms_auth_demo') === 'true') {
+        setIsAuthenticated(true);
+        setUserName('Demo Administrator');
+        setIsChecking(false);
+        return;
+      }
+
+      // 2. Normal Supabase Auth
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session && pathname !== '/admin/login') {
@@ -39,6 +48,8 @@ export default function AdminLayout({
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (localStorage.getItem('oms_auth_demo') === 'true') return;
+
       if (!session && pathname !== '/admin/login') {
         router.push('/admin/login');
         setIsAuthenticated(false);
