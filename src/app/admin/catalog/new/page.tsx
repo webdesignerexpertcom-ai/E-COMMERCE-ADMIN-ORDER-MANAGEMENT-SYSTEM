@@ -67,6 +67,7 @@ export default function NewProductListing() {
     status: 'draft'
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [variants, setVariants] = useState<any[]>([]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,6 +127,7 @@ export default function NewProductListing() {
       } else {
         alert("Action Failed: " + (data.error || "Unknown server error"));
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch(err: any) {
       console.error("API call failed", err);
       alert("Network error or server unreachable. Check your backend status.");

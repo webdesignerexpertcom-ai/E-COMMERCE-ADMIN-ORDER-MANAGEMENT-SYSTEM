@@ -25,7 +25,7 @@ const auditLogs = [
   { id: '6', admin: 'Sarah Williams', action: 'Update Status', entity: 'Order', target: '#ORD-84922', time: 'Yesterday', details: 'Changed status to Shipped', status: 'success' },
 ];
 
-const statusConfig: any = {
+const statusConfig: Record<string, { bg: string; text: string; icon: React.ElementType }> = {
   success: { bg: 'bg-emerald-50', text: 'text-emerald-600', icon: ShieldCheck },
   warning: { bg: 'bg-rose-50', text: 'text-rose-600', icon: AlertCircle },
   info: { bg: 'bg-indigo-50', text: 'text-indigo-600', icon: Zap },

@@ -65,6 +65,7 @@ export default function InventoryHub() {
   const [toastMessage, setToastMessage] = useState('');
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [bulkAdjustment, setBulkAdjustment] = useState({ amount: '0', status: '' });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activeItem, setActiveItem] = useState<any | null>(null);
   const [isVariantExplorerOpen, setIsVariantExplorerOpen] = useState(false);
 
@@ -162,6 +163,7 @@ export default function InventoryHub() {
                    </div>
                    <div className="p-10 space-y-6">
                       <div className="grid grid-cols-1 gap-3">
+                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                          {activeItem.variants.length > 0 ? activeItem.variants.map((v: any) => (
                             <div key={v.id} className="flex items-center justify-between p-5 bg-slate-50 border border-slate-100 rounded-3xl hover:border-indigo-100 transition-all">
                                <div className="flex flex-col">

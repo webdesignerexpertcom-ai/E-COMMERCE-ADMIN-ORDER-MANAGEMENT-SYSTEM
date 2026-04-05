@@ -23,10 +23,12 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const initialProducts: any[] = [];
 
 export default function CatalogPage() {
   const [view, setView] = useState<'table' | 'grid'>('table');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [products, setProducts] = useState<any[]>(initialProducts);
   const [searchTerm, setSearchTerm] = useState('');
   const [isToastOpen, setIsToastOpen] = useState(false);
@@ -38,6 +40,7 @@ export default function CatalogPage() {
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data.length > 0) {
+           // eslint-disable-next-line @typescript-eslint/no-explicit-any
            const mappedProducts = data.data.map((p: any) => ({
              id: p._id || p.id,
              name: p.name,

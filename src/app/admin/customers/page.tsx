@@ -66,6 +66,7 @@ const customers = [
   }
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const segmentStyles: any = {
   'VIP': { color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', icon: Star },
   'Loyal': { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', icon: ShieldCheck },
