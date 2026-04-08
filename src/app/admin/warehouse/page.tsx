@@ -5,12 +5,10 @@ import {
   Zap, 
   ArrowUp, 
   ArrowDown, 
-  Package, 
   User, 
   Clock,
   Search,
   Filter,
-  CheckCircle2,
   Database
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,7 +20,8 @@ interface WarehouseEvent {
   type: 'restock' | 'dispatch' | 'adjustment';
   amount: number;
   performer: string;
-  timestamp: string;
+  timestamp?: string;
+  created_at?: string;
   notes: string;
 }
 
@@ -31,24 +30,28 @@ export default function WarehouseEvents() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchEvents = () => {
+  const fetchEvents = async () => {
      setLoading(true);
-     // Simulate fetching real-time warehouse events
-     setTimeout(() => {
-        const dummyEvents: WarehouseEvent[] = [
-           { id: 'EV-001', sku: 'LINEN-SHIRT-BLU', type: 'restock', amount: 50, performer: 'Admin Sarah', timestamp: '2 mins ago', notes: 'Verified restock from primary supplier' },
-           { id: 'EV-002', sku: 'CERAMIC-MUG-WHT', type: 'dispatch', amount: -2, performer: 'System (OMS)', timestamp: '12 mins ago', notes: 'Order #ORD-089 fulfillment' },
-           { id: 'EV-003', sku: 'LIFESYLE-HOODIE', type: 'adjustment', amount: 12, performer: 'Warehouse Mike', timestamp: '45 mins ago', notes: 'Stock reconciling after audit' },
-           { id: 'EV-004', sku: 'LEATHER-BAG-BRN', type: 'restock', amount: 15, performer: 'Admin Sarah', timestamp: '1 hr ago', notes: 'Seasonal inventory boost' },
-           { id: 'EV-005', sku: 'COTTON-TEE-BLK', type: 'dispatch', amount: -1, performer: 'System (OMS)', timestamp: '3 hrs ago', notes: 'Order #ORD-087 fulfillment' }
-        ];
-        setEvents(dummyEvents);
+     try {
+        const res = await fetch('/api/warehouse/events', {
+           headers: { 'x-environment': localStorage.getItem('oms-environment') || 'production' }
+        });
+        const result = await res.json();
+        if (result.success) {
+           setEvents(result.data);
+        }
+     } catch (err) {
+        console.error("Failed to fetch events:", err);
+     } finally {
         setLoading(false);
-     }, 800);
+     }
   };
 
   useEffect(() => {
      fetchEvents();
+     // Set up a refresh interval for "real-time" feel
+     const interval = setInterval(fetchEvents, 30000); 
+     return () => clearInterval(interval);
   }, []);
 
   const filteredEvents = events.filter(e => 
@@ -64,12 +67,22 @@ export default function WarehouseEvents() {
            <p className="text-slate-500 font-medium italic mt-1 font-bold opacity-80">Real-time terminal for SKU movements and restock protocols</p>
         </div>
         <div className="flex items-center gap-4">
+           <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 animate-pulse">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Live Stream Active</span>
+           </div>
            <button 
-              onClick={fetchEvents}
-              className="px-8 py-3.5 bg-slate-900 text-white rounded-[20px] text-sm font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 shadow-2xl shadow-slate-900/10"
+              onClick={() => fetchEvents()}
+              className="px-6 py-3 bg-white border border-slate-200 text-slate-900 rounded-[16px] text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 flex items-center gap-2 shadow-sm"
            >
               <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />
-              Sync Stream
+              Sync
+           </button>
+           <button 
+              className="px-8 py-3.5 bg-slate-900 text-white rounded-[20px] text-sm font-black uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 flex items-center gap-2 shadow-2xl shadow-slate-900/10"
+           >
+              <Zap className="w-4 h-4 fill-indigo-400" />
+              Restock Protocols
            </button>
         </div>
       </div>
@@ -161,11 +174,13 @@ export default function WarehouseEvents() {
                            </td>
                            <td className="p-8 pr-12 text-right">
                               <div className="flex flex-col items-end">
-                                 <span className="text-sm font-black text-slate-900 flex items-center gap-1.5">
-                                    <Clock className="w-3.5 h-3.5 opacity-40" />
-                                    {event.timestamp}
-                                 </span>
-                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-40 mt-1">{event.id}</span>
+                                  <span className="text-sm font-black text-slate-900 flex items-center gap-1.5">
+                                     <Clock className="w-3.5 h-3.5 opacity-40" />
+                                     {new Date(event.timestamp || event.created_at || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-40 mt-1">
+                                     {new Date(event.timestamp || event.created_at || new Date()).toLocaleDateString()}
+                                  </span>
                               </div>
                            </td>
                         </motion.tr>
@@ -180,7 +195,7 @@ export default function WarehouseEvents() {
 }
 
 // Missing icon fix
-function RefreshCw(props: any) {
+function RefreshCw(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

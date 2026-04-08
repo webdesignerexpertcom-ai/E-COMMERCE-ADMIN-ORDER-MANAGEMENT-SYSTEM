@@ -28,15 +28,12 @@ export async function GET(req: Request) {
     if (error) throw error;
     
     let displayProducts = (products || []).map(p => ({
+      ...p,
       _id: p.id,
-      name: p.name,
       desc: p.description,
-      price: p.price,
       oldPrice: p.discount_price,
-      tag: p.tag,
       tagColor: p.tag_color,
       image: p.images?.[0] || '',
-      status: p.status
     }));
 
     if (displayProducts.length < 4) {
@@ -45,8 +42,9 @@ export async function GET(req: Request) {
     }
     
     return NextResponse.json({ success: true, data: displayProducts, environment: env });
-  } catch (error: any) {
-    console.error("GET Products Error:", error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("GET Products Error:", message);
     return NextResponse.json({ success: true, isDemo: true, data: DUMMY_PRODUCTS });
   }
 }
@@ -57,7 +55,7 @@ export async function POST(req: Request) {
     const supabase = getSupabaseClient(env);
     
     // Safety check for API Keys
-    const isPlaceholder = (supabase as any).supabaseKey === 'placeholder_key' || !(supabase as any).supabaseKey;
+    const isPlaceholder = (supabase as unknown as { supabaseKey: string }).supabaseKey === 'placeholder_key';
     if (isPlaceholder) {
       const missingVar = env === 'staging' ? 'STAGING_SUPABASE_ANON_KEY' : 'SUPABASE_ANON_KEY';
       console.error(`🚨 CRITICAL: Supabase API Key is MISSING for environment: ${env}`);
@@ -123,9 +121,10 @@ export async function POST(req: Request) {
     if (error) throw error;
     
     return NextResponse.json({ success: true, data: product, environment: env }, { status: 201 });
-  } catch (error: any) {
-    console.error("POST Product Error:", error.message);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("POST Product Error:", message);
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 
@@ -140,7 +139,7 @@ export async function PUT(req: Request) {
       return NextResponse.json({ success: false, error: 'Product ID is required' }, { status: 400 });
     }
 
-    const mappedUpdates: any = { ...updates };
+    const mappedUpdates: Record<string, any> = { ...updates };
     if (updates.oldPrice !== undefined) { mappedUpdates.discount_price = updates.oldPrice; delete mappedUpdates.oldPrice; }
     if (updates.stock !== undefined) { mappedUpdates.stock_quantity = updates.stock; delete mappedUpdates.stock; }
     if (updates.image !== undefined) { mappedUpdates.images = [updates.image]; delete mappedUpdates.image; }
@@ -154,11 +153,38 @@ export async function PUT(req: Request) {
       .single();
 
     if (error) throw error;
+
+    // Log Warehouse Event if stock was updated
+    if (updates.stock !== undefined) {
+      const { data: currentProduct } = await supabase.from('products').select('stock_quantity, sku').eq('id', id).single();
+      const diff = updates.stock - (currentProduct?.stock_quantity || 0);
+      if (diff !== 0) {
+        await supabase.from('warehouse_events').insert([{
+          sku: product.sku,
+          type: diff > 0 ? 'restock' : 'dispatch',
+          amount: diff,
+          performer: 'Admin (System)',
+          notes: `Stock updated manually via Inventory Hub.`
+        }]);
+      }
+    }
+
+    // Log if restock status changed
+    if (updates.restock_status !== undefined) {
+      await supabase.from('warehouse_events').insert([{
+        sku: product.sku,
+        type: 'adjustment',
+        amount: 0,
+        performer: 'Automation Engine',
+        notes: `Restock status changed to ${updates.restock_status}`
+      }]);
+    }
     
     return NextResponse.json({ success: true, data: product, environment: env });
-  } catch (err: any) {
-    console.error('PUT Error:', err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('PUT Error:', message);
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 
@@ -181,9 +207,10 @@ export async function DELETE(req: Request) {
     if (error) throw error;
     
     return NextResponse.json({ success: true, message: 'Deleted successfully', environment: env });
-  } catch (err: any) {
-    console.error('DELETE Error:', err);
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('DELETE Error:', message);
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
 

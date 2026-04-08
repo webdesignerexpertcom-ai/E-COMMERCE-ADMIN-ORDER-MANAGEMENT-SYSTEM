@@ -18,7 +18,8 @@ import {
   X,
   Database,
   ArrowUpRight,
-  PackageCheck
+  PackageCheck,
+  Clock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,6 +53,8 @@ export default function InventoryHub() {
   const [isVariantExplorerOpen, setIsVariantExplorerOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
+  const [isPredictiveModalOpen, setIsPredictiveModalOpen] = useState(false);
+  const [predictiveItem, setPredictiveItem] = useState<InventoryItem | null>(null);
 
   const fetchInventory = async () => {
     try {
@@ -374,7 +377,86 @@ export default function InventoryHub() {
          )}
       </AnimatePresence>
 
-       {/* Quick Identity Edit Modal */}
+        {/* Pulse Intelligence Modal */}
+        <AnimatePresence>
+           {isPredictiveModalOpen && predictiveItem && (
+              <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 backdrop-blur-2xl bg-slate-900/70">
+                 <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                    className="bg-white rounded-[48px] shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden"
+                 >
+                    <div className="bg-slate-900 p-8 text-white flex items-center justify-between">
+                       <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
+                             <Zap className="w-6 h-6 fill-white" />
+                          </div>
+                          <div>
+                             <h2 className="text-2xl font-black tracking-tight leading-none mb-1">{predictiveItem.name}</h2>
+                             <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 italic">Pulse Intelligence Report</p>
+                          </div>
+                       </div>
+                       <button onClick={() => setIsPredictiveModalOpen(false)} className="p-3 hover:bg-white/10 rounded-xl transition-colors"><X className="w-6 h-6" /></button>
+                    </div>
+                    <div className="p-10 space-y-10">
+                       <div className="grid grid-cols-2 gap-6">
+                          <div className="p-6 bg-slate-50 border border-slate-100 rounded-[32px]">
+                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Sales Velocity</p>
+                             <div className="flex items-end gap-2">
+                                <span className="text-3xl font-black text-slate-900 leading-none">{predictiveItem.velocity}</span>
+                                <span className="text-xs font-bold text-slate-400 pb-1 italic">units/day</span>
+                             </div>
+                             <div className="mt-4 flex items-center gap-2 text-emerald-600">
+                                <ArrowUpRight className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">+12% vs last week</span>
+                             </div>
+                          </div>
+                          <div className="p-6 bg-slate-50 border border-slate-100 rounded-[32px]">
+                             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Stock Exhaustion</p>
+                             <div className="flex items-end gap-2">
+                                <span className={cn("text-3xl font-black leading-none", predictiveItem.days_to_out <= 5 ? "text-rose-500" : "text-slate-900")}>
+                                   {predictiveItem.days_to_out}
+                                </span>
+                                <span className="text-xs font-bold text-slate-400 pb-1 italic">estimated days</span>
+                             </div>
+                             <div className="mt-4 flex items-center gap-2 text-slate-500">
+                                <Clock className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Target: Apr 22, 2026</span>
+                             </div>
+                          </div>
+                       </div>
+
+                       <div className="p-8 bg-indigo-50 border-2 border-indigo-100 rounded-[40px] relative overflow-hidden">
+                          <div className="relative z-10 flex items-center justify-between">
+                             <div className="space-y-2">
+                                <h4 className="text-lg font-black text-indigo-900 tracking-tight leading-none uppercase">Restock Recommendation</h4>
+                                <p className="text-sm text-indigo-600 font-medium italic">Based on velocity + 15% safety buffer</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-3xl border border-indigo-200 shadow-sm text-center min-w-[120px]">
+                                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Quantity</p>
+                                <span className="text-3xl font-black text-indigo-600">
+                                   {Math.ceil(Number(predictiveItem.velocity) * 30 * 1.15)}
+                                </span>
+                             </div>
+                          </div>
+                       </div>
+
+                       <div className="flex gap-4">
+                          <button 
+                             onClick={() => {
+                                adjustStock(predictiveItem.id, Math.ceil(Number(predictiveItem.velocity) * 30 * 1.15));
+                                setIsPredictiveModalOpen(false);
+                             }}
+                             className="flex-1 py-5 bg-indigo-600 text-white rounded-[24px] text-[10px] font-black uppercase tracking-widest shadow-2xl shadow-indigo-600/30 hover:bg-indigo-500 transition-all flex items-center justify-center gap-2"
+                          >
+                             <PackageCheck className="w-4 h-4" /> Approve & Dispatch Supply Order
+                          </button>
+                       </div>
+                    </div>
+                 </motion.div>
+              </div>
+           )}
+        </AnimatePresence>
+
        <AnimatePresence>
           {isEditModalOpen && editingItem && (
              <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-900/60">
@@ -583,7 +665,7 @@ export default function InventoryHub() {
                       {item.status.replace('-', ' ')}
                     </span>
                     <p className="text-[9px] font-bold text-slate-400 mt-2 uppercase tracking-[0.1em] italic">
-                       {item.days_to_out > 0 ? `~${item.days_to_out} Days Left` : 'N/A Predictive'}
+                       {item.stock > 0 ? `~${item.days_to_out} Days Left` : 'Critical: Exhausted'}
                     </p>
                   </td>
                   <td className="p-8 pr-12 text-right">
@@ -605,6 +687,13 @@ export default function InventoryHub() {
                           <ArrowDown className="w-5 h-5" />
                         </button>
                       </div>
+                      <button 
+                        onClick={() => { setPredictiveItem(item); setIsPredictiveModalOpen(true); }}
+                        className="p-4 text-indigo-400 hover:text-indigo-600 bg-white rounded-[20px] transition-all border border-slate-100 shadow-sm"
+                        title="Pulse Intelligence"
+                      >
+                        <Zap className="w-6 h-6 fill-indigo-50" />
+                      </button>
                       <button 
                         onClick={() => { setEditingItem(item); setIsEditModalOpen(true); }}
                         className="p-4 text-slate-400 hover:text-indigo-600 bg-white rounded-[20px] transition-all border border-slate-100 shadow-sm"
