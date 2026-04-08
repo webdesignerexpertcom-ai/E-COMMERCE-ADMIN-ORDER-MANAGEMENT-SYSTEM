@@ -19,15 +19,21 @@ import {
   Phone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'general' | 'roles' | 'oms' | 'auth'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'roles' | 'oms' | 'auth' | 'payments'>('general');
   const [storeName, setStoreName] = useState('Homemade Love');
-  const [currency, setCurrency] = useState('USD ($)');
+  const [currency, setCurrency] = useState('INR (₹)');
   const [whatsappNumber, setWhatsappNumber] = useState('9492456488');
+
+  // Payment states
+  const [razorpayKeyId, setRazorpayKeyId] = useState('rzp_test_dummykey123');
+  const [isRazorpayEnabled, setIsRazorpayEnabled] = useState(true);
 
   const tabs = [
     { id: 'general', name: 'Storefront Info', icon: Globe },
+    { id: 'payments', name: 'Razorpay Payments', icon: CreditCard },
     { id: 'roles', name: 'Access Control (RBAC)', icon: Shield },
     { id: 'oms', name: 'OMS Workflow', icon: Truck },
     { id: 'auth', name: 'Cloud & API Keys', icon: Webhook },
@@ -123,6 +129,66 @@ export default function SettingsPage() {
             </div>
           )}
 
+          {activeTab === 'payments' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               <section className="bg-white p-8 rounded-[40px] border border-slate-200 shadow-sm space-y-8">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-6 mb-6">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-6 h-6 text-indigo-600" />
+                      <h3 className="text-xl font-black text-slate-900">Razorpay Payment Gateway</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded", isRazorpayEnabled ? "bg-emerald-100 text-emerald-600" : "bg-slate-100 text-slate-400")}>
+                        {isRazorpayEnabled ? 'Active' : 'Disabled'}
+                      </span>
+                      <button 
+                        onClick={() => setIsRazorpayEnabled(!isRazorpayEnabled)}
+                        className="relative inline-flex items-center cursor-pointer"
+                      >
+                        <div className={cn("w-11 h-6 rounded-full transition-colors", isRazorpayEnabled ? "bg-indigo-600" : "bg-slate-200")}>
+                          <div className={cn("absolute top-1 left-1 bg-white w-4 h-4 rounded-full transition-transform", isRazorpayEnabled ? "translate-x-5" : "translate-x-0")} />
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                       <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Razorpay Key ID</label>
+                       <input 
+                         type="text" 
+                         value={razorpayKeyId}
+                         onChange={(e) => setRazorpayKeyId(e.target.value)}
+                         placeholder="rzp_test_..."
+                         className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all shadow-sm" 
+                       />
+                    </div>
+                    <div className="space-y-2">
+                       <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Webhook Secret</label>
+                       <input 
+                         type="password" 
+                         value="••••••••••••••••"
+                         readOnly
+                         className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all shadow-sm opacity-50 cursor-not-allowed" 
+                       />
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-indigo-50 rounded-[32px] border border-indigo-100 flex items-start gap-4">
+                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-indigo-600 shadow-sm shrink-0">
+                        <Lock className="w-5 h-5" />
+                     </div>
+                     <div>
+                        <p className="text-sm font-black text-indigo-900 uppercase tracking-tight mb-1">Dummy Payment Mode</p>
+                        <p className="text-xs text-indigo-700/70 font-medium leading-relaxed">
+                          Your account is currently in <strong>Test Mode</strong>. All transactions made via Razorpay will be simulated for development purposes. No real money will be deducted.
+                        </p>
+                     </div>
+                  </div>
+               </section>
+            </div>
+          )}
+
           {activeTab === 'roles' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                <section className="bg-slate-900 p-8 rounded-[40px] border border-slate-800 shadow-2xl">
@@ -131,7 +197,10 @@ export default function SettingsPage() {
                       <Shield className="w-6 h-6 text-emerald-500" />
                       <h3 className="text-xl font-black text-white tracking-tight">Active Team Permissions</h3>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20">
+                    <button 
+                      onClick={() => setIsInviteModalOpen(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20"
+                    >
                       <Plus className="w-4 h-4" />
                       Invite Staff
                     </button>
@@ -227,6 +296,58 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+      {/* Invite Staff Modal */}
+      <AnimatePresence>
+        {isInviteModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setIsInviteModalOpen(false)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-md bg-white rounded-[40px] shadow-2xl border border-slate-200 p-8 overflow-hidden"
+            >
+               <div className="absolute top-0 left-0 w-full h-2 bg-indigo-600" />
+               <div className="flex items-center gap-4 mb-8">
+                  <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900 uppercase tracking-tighter">Invite Team Member</h3>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Assign RBAC Permission Level</p>
+                  </div>
+               </div>
+
+               <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Email Address</label>
+                    <input type="email" placeholder="staff@store.com" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Role Type</label>
+                    <select className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 outline-none transition-all appearance-none cursor-pointer">
+                       <option>Inventory Manager</option>
+                       <option>Support Agent</option>
+                       <option>Fulfillment Officer</option>
+                    </select>
+                  </div>
+                  <button 
+                    onClick={() => { setIsInviteModalOpen(false); alert('Invitation Sent Successfully!'); }}
+                    className="w-full py-4 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-slate-800 transition-all active:scale-95"
+                  >
+                    Send Invitation
+                  </button>
+               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

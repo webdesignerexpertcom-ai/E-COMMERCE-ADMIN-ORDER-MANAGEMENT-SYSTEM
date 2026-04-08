@@ -44,47 +44,60 @@ const velocityData = [
 ];
 
 export default function AnalyticsHealth() {
+  const [timeframe, setTimeframe] = React.useState('Weekly');
+
+  const stats = [
+    { label: 'Overall Health', value: '94.2%', trend: '+2.1%', sub: timeframe === 'Daily' ? 'Today' : timeframe === 'Weekly' ? 'vs last week' : 'vs last month', icon: ShieldCheck, color: 'text-emerald-500' },
+    { label: 'Potential Loss', value: '₹2,840', trend: '-₹120', sub: 'Detected Stockout Risk', icon: AlertTriangle, color: 'text-rose-500' },
+    { label: 'Avg SKU velocity', value: '12.4', trend: '+0.8', sub: 'Units per day', icon: Zap, color: 'text-indigo-500' },
+    { label: 'Restock Urgency', value: '18 Items', trend: 'High', sub: 'Action required', icon: Package, color: 'text-amber-500' },
+  ];
+
   return (
     <div className="space-y-10">
       <div className="flex items-center justify-between">
         <div>
            <div className="flex items-center gap-2 mb-2">
              <span className="p-1 bg-emerald-50 text-emerald-600 rounded border border-emerald-100"><ShieldCheck className="w-4 h-4" /></span>
-             <h4 className="text-[10px] font-black uppercase text-emerald-600 tracking-widest">Enterprise Analytics</h4>
+             <h4 className="text-[10px] font-black uppercase text-emerald-600 tracking-widest leading-none">Enterprise Analytics</h4>
            </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Stock Health Intelligence</h1>
-          <p className="text-slate-500 font-medium">Predictive inventory modeling and revenue risk analysis.</p>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-tight uppercase tracking-tighter">Stock Health Intelligence</h1>
+          <p className="text-slate-500 font-medium italic opacity-80 font-bold">Predictive inventory modeling and revenue risk analysis.</p>
         </div>
         <div className="flex items-center gap-3">
            <div className="flex bg-white border border-slate-200 p-1 rounded-2xl shadow-sm">
-             <button className="px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600">Daily</button>
-             <button className="px-4 py-2 text-xs font-black uppercase tracking-widest bg-slate-900 text-white rounded-xl shadow-xl shadow-slate-900/10">Weekly</button>
-             <button className="px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600">Monthly</button>
+             {['Daily', 'Weekly', 'Monthly'].map(t => (
+               <button 
+                key={t}
+                onClick={() => setTimeframe(t)}
+                className={cn(
+                  "px-4 py-2 text-xs font-black uppercase tracking-widest transition-all",
+                  timeframe === t ? "bg-slate-900 text-white rounded-xl shadow-xl shadow-slate-900/10" : "text-slate-400 hover:text-slate-600"
+                )}
+               >
+                 {t}
+               </button>
+             ))}
            </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { label: 'Overall Health', value: '94.2%', trend: '+2.1%', sub: 'vs last week', icon: ShieldCheck, color: 'text-emerald-500' },
-          { label: 'Potential Loss', value: '$2,840', trend: '-$120', sub: 'Detected Stockout Risk', icon: AlertTriangle, color: 'text-rose-500' },
-          { label: 'Avg SKU velocity', value: '12.4', trend: '+0.8', sub: 'Units per day', icon: Zap, color: 'text-indigo-500' },
-          { label: 'Restock Urgency', value: '18 Items', trend: 'High', sub: 'Action required', icon: Package, color: 'text-amber-500' },
-        ].map((stat, i) => (
+        {stats.map((stat, i) => (
           <div key={i} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all group">
              <div className="flex items-center justify-between mb-4">
                 <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center bg-slate-50 border border-slate-100 group-hover:bg-white group-hover:border-slate-200 transition-colors", stat.color)}>
                   <stat.icon className="w-6 h-6" />
                 </div>
                 <div className="text-right">
-                  <span className={cn("text-xs font-black", stat.trend.includes('+') || stat.trend.includes('$') ? 'text-emerald-500' : 'text-rose-500')}>
+                  <span className={cn("text-xs font-black", stat.trend.includes('+') || stat.trend.includes('₹') ? 'text-emerald-500' : 'text-rose-500')}>
                     {stat.trend}
                   </span>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{stat.sub}</p>
                 </div>
              </div>
-             <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-             <h3 className="text-2xl font-black text-slate-900">{stat.value}</h3>
+             <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">{stat.label}</p>
+             <h3 className="text-2xl font-black text-slate-900 tracking-tight leading-none">{stat.value}</h3>
           </div>
         ))}
       </div>

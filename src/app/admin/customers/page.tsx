@@ -17,12 +17,13 @@ import {
   MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const customers = [
   { 
     name: 'Emily Davis', 
     email: 'emily.d@example.com', 
-    clv: '$4,280.00', 
+    clv: '₹4,28,000.00', 
     segment: 'VIP', 
     lastOrder: '2 hours ago', 
     orders: 12,
@@ -31,7 +32,7 @@ const customers = [
   { 
     name: 'Michael Chen', 
     email: 'm.chen@example.com', 
-    clv: '$280.50', 
+    clv: '₹28,050.50', 
     segment: 'New', 
     lastOrder: '1 day ago', 
     orders: 1,
@@ -40,7 +41,7 @@ const customers = [
   { 
     name: 'Sarah Connor', 
     email: 'sarah.c@tech.net', 
-    clv: '$1,150.00', 
+    clv: '₹1,15,000.00', 
     segment: 'Loyal', 
     lastOrder: '5 days ago', 
     orders: 6,
@@ -49,7 +50,7 @@ const customers = [
   { 
     name: 'James Bond', 
     email: '007@mi6.gov.uk', 
-    clv: '$12,500.00', 
+    clv: '₹12,50,000.00', 
     segment: 'VIP', 
     lastOrder: '1 month ago', 
     orders: 24,
@@ -58,7 +59,7 @@ const customers = [
   { 
     name: 'Peter Parker', 
     email: 'p.parker@dailybugle.com', 
-    clv: '$45.00', 
+    clv: '₹4,500.00', 
     segment: 'At Risk', 
     lastOrder: '6 months ago', 
     orders: 1,
@@ -75,16 +76,30 @@ const segmentStyles: any = {
 };
 
 export default function CustomerCRM() {
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [activeSegment, setActiveSegment] = React.useState('All');
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
+
+  const filteredCustomers = customers.filter(c => {
+    const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          c.email.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSegment = activeSegment === 'All' || c.segment === activeSegment;
+    return matchesSearch && matchesSegment;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Customer CRM</h1>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-8 uppercase tracking-tighter">Customer CRM</h1>
           <p className="text-slate-500 font-medium">Customer Intelligence & Lifetime Value tracking</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">
-            Segment All
+          <button 
+            onClick={() => { setActiveSegment('All'); setSearchTerm(''); }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm"
+          >
+            Reset All
           </button>
           <button className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all hover:scale-[1.02] active:scale-[0.98]">
             Bulk Export
@@ -98,15 +113,41 @@ export default function CustomerCRM() {
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
             <input 
               type="text" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by Name, Email, or Phone..."
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border-transparent rounded-xl text-sm font-medium focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
             />
           </div>
-          <div className="flex items-center gap-3">
-             <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">
+          <div className="flex items-center gap-3 relative">
+             <button 
+               onClick={() => setIsFilterOpen(!isFilterOpen)}
+               className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors"
+             >
               <Filter className="w-4 h-4 text-slate-400" />
-              Segmentation: All
+              Segmentation: {activeSegment}
             </button>
+            <AnimatePresence>
+              {isFilterOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl z-20 overflow-hidden"
+                >
+                  {['All', 'VIP', 'Loyal', 'New', 'At Risk'].map(seg => (
+                    <button 
+                      key={seg}
+                      onClick={() => { setActiveSegment(seg); setIsFilterOpen(false); }}
+                      className={cn(
+                        "w-full text-left px-4 py-2 text-xs font-bold uppercase tracking-widest hover:bg-slate-50 transition-colors",
+                        activeSegment === seg ? "text-indigo-600 bg-indigo-50/50" : "text-slate-600"
+                      )}
+                    >
+                      {seg}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -123,7 +164,7 @@ export default function CustomerCRM() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {customers.map((c) => {
+              {filteredCustomers.map((c) => {
                 const style = segmentStyles[c.segment];
                 const Icon = style.icon;
                 return (

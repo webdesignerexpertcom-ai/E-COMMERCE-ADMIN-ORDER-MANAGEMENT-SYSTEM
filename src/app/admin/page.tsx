@@ -41,7 +41,7 @@ export default function AdminDashboard() {
   const stats = [
     { 
       label: 'Total Revenue', 
-      value: '$128,430.00', 
+      value: '₹1,28,430.00', 
       trend: '+12.5%', 
       isPositive: true, 
       icon: DollarSign,
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
     },
     { 
       label: 'Avg. Order Value', 
-      value: '$45.14', 
+      value: '₹4,514', 
       trend: '-2.4%', 
       isPositive: false, 
       icon: TrendingUp,
@@ -161,10 +161,10 @@ export default function AdminDashboard() {
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {[
-                   { id: '#ORD-089', name: 'Alina Vance', amount: '$240.00', time: '2 mins ago', status: 'Pending' },
-                   { id: '#ORD-088', name: 'Marcus Jin', amount: '$85.50', time: '12 mins ago', status: 'Pending' },
-                   { id: '#ORD-087', name: 'Elena Rostova', amount: '$310.25', time: '28 mins ago', status: 'Pending' },
-                   { id: '#ORD-086', name: 'David Smith', amount: '$12.99', time: '1 hr ago', status: 'Pending' },
+                   { id: '#ORD-089', name: 'Alina Vance', amount: '₹2,400.00', time: '2 mins ago', status: 'Pending' },
+                   { id: '#ORD-088', name: 'Marcus Jin', amount: '₹8,550.50', time: '12 mins ago', status: 'Pending' },
+                   { id: '#ORD-087', name: 'Elena Rostova', amount: '₹3,100.25', time: '28 mins ago', status: 'Pending' },
+                   { id: '#ORD-086', name: 'David Smith', amount: '₹1,299.00', time: '1 hr ago', status: 'Pending' },
                 ].map((order) => (
                   <tr key={order.id} className="hover:bg-slate-50/80 transition-colors group">
                     <td className="p-4 pl-8 text-sm font-bold text-blue-600">{order.id}</td>

@@ -239,12 +239,12 @@ export default function NewProductListing() {
 
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <div className="space-y-2">
-                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Retail Price ($)</label>
+                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Retail Price (₹)</label>
                    <div className="relative">
                       <DollarSign className="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input 
                          type="number" 
-                         placeholder="29.99"
+                         placeholder="2499"
                          value={productData.price}
                          onChange={(e) => setProductData({...productData, price: e.target.value})}
                          className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-[24px] text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none"
@@ -252,7 +252,7 @@ export default function NewProductListing() {
                    </div>
                 </div>
                 <div className="space-y-2">
-                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Discount Price ($)</label>
+                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Discount Price (₹)</label>
                    <div className="relative">
                       <DollarSign className="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input 
