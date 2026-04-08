@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, ArrowRight, ShieldCheck, Search, Leaf, Truck, Shield, Menu, X, Star, MessageCircle, Trash2, Heart, Award } from 'lucide-react';
@@ -17,6 +18,7 @@ const categories = [
 // The featuredProducts are now fetched dynamically from the database.
 
 export default function ProEcoStorefront() {
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cart, setCart] = useState<any[]>([]);
@@ -45,8 +47,14 @@ export default function ProEcoStorefront() {
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     fetchProducts();
+
+    // Load cart from localStorage
+    const savedCart = localStorage.getItem('naturepure_cart');
+    if (savedCart) {
+      setCart(JSON.parse(savedCart));
+    }
 
     // REAL-TIME SYNC: Listen for database changes
     const channel = supabase
@@ -61,6 +69,11 @@ export default function ProEcoStorefront() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // Save cart to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('naturepure_cart', JSON.stringify(cart));
+  }, [cart]);
 
 
   const addToCart = (product: any) => {
@@ -160,38 +173,9 @@ export default function ProEcoStorefront() {
                     </button>
                     
                     <button 
-                       onClick={async () => {
+                       onClick={() => {
                          if (cart.length === 0) return;
-                         const customerName = prompt("Enter full name for Direct Order:");
-                         if (!customerName) return;
-                         const customerPhone = prompt("Enter WhatsApp/Phone Number:");
-                         if (!customerPhone) return;
-                         const customerAddress = prompt("Enter Delivery Address (Area/Pincode):");
-                         if (!customerAddress) return;
-
-                         try {
-                           const res = await fetch('/api/orders', {
-                             method: 'POST',
-                             headers: { 'Content-Type': 'application/json' },
-                             body: JSON.stringify({
-                               customerName,
-                               customerPhone,
-                               shippingAddress: { address: customerAddress },
-                               totalAmount: cartTotal,
-                               itemsCount: cart.length
-                             })
-                           });
-                           const data = await res.json();
-                           if (data.success) {
-                             window.alert(`Thank you ${customerName}! Your order ${data.data.order_id} has been placed. Our team will contact you shortly.`);
-                             setCart([]);
-                             setIsCartOpen(false);
-                           } else {
-                             window.alert("Checkout failed: " + data.error);
-                           }
-                         } catch (err) {
-                           window.alert("Network error during checkout.");
-                         }
+                         router.push('/checkout');
                        }}
                        disabled={cart.length === 0}
                        className="w-full py-5 bg-slate-900 border-2 border-slate-900 text-white hover:bg-white hover:text-slate-900 disabled:bg-slate-200 disabled:text-slate-400 disabled:border-transparent text-white rounded-[24px] font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl active:scale-[0.98]"
