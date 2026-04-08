@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Plus, Search, Activity, Package, Check, X, Bell, Mail, MessageSquare, Clock, 
-  History, Truck, ChevronRight, Menu, Layout, Settings, Flame, DollarSign, 
-  Download, Archive, Eye, EyeOff, User, PieChart, Home, Smartphone, ChevronDown, Monitor
+  Plus, Search, Package, Check, X, Bell, Clock, 
+  History, ChevronRight, Menu, Layout, Settings, Flame, DollarSign, 
+  Download, Archive, Eye, EyeOff, User, PieChart, Home, Monitor, Zap, Truck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,15 +62,15 @@ export default function StockIntelligenceDashboard() {
       const res = await omsFetch('/api/products');
       const data = await res.json();
       if (data.success) {
-        setProducts(data.data.map((p: any) => ({
+        setProducts(data.data.map((p: ProductIntelligence & { _id?: string }) => ({
           ...p,
           id: p._id || p.id,
-          velocity: parseFloat(p.velocity || (Math.random() * 5 + 1).toFixed(1)),
-          leadTime: parseInt(p.leadTime || 7),
+          velocity: parseFloat(p.velocity?.toString() || (Math.random() * 5 + 1).toFixed(1)),
+          leadTime: parseInt(p.leadTime?.toString() || '7'),
           safetyBuffer: 15,
           restockStatus: p.restockStatus || 'none',
-          incomingStock: parseInt(p.incomingStock || 0),
-          price: parseFloat(p.price || 999),
+          incomingStock: parseInt(p.incomingStock?.toString() || '0'),
+          price: parseFloat(p.price?.toString() || '999'),
           category: p.category || 'General',
           isArchived: !!p.isArchived
         })));
@@ -80,6 +80,22 @@ export default function StockIntelligenceDashboard() {
 
   useEffect(() => { fetchProducts(); }, []);
 
+  const handleUpdateProduct = async (id: string, updates: Partial<ProductIntelligence>) => {
+    try {
+      const res = await omsFetch('/api/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates })
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchProducts();
+        return true;
+      }
+    } catch (err) { console.error(err); }
+    return false;
+  };
+
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
     setIsToastOpen(true);
@@ -87,14 +103,14 @@ export default function StockIntelligenceDashboard() {
   };
 
   const calculateIntelligence = (p: ProductIntelligence) => {
-    const demandDuringLead = p.velocity * p.leadTime;
+    const demandDuringLead = (p.velocity || 0) * (p.leadTime || 7);
     const reorderPoint = Math.ceil(demandDuringLead + (demandDuringLead * 0.15));
-    const daysToStockout = p.velocity > 0 ? (p.stock / p.velocity) : 999;
+    const daysToStockout = (p.velocity || 0) > 0 ? (p.stock / p.velocity) : 999;
     let status: 'OUT OF STOCK' | 'CRITICAL' | 'LOW STOCK' | 'HEALTHY' = 'HEALTHY';
     if (p.stock <= 0) status = 'OUT OF STOCK';
-    else if (p.stock < (p.velocity * 2)) status = 'CRITICAL';
+    else if (p.stock < ((p.velocity || 0) * 2)) status = 'CRITICAL';
     else if (p.stock < reorderPoint) status = 'LOW STOCK';
-    const projectedLoss = (status !== 'HEALTHY' && p.velocity > 0) ? (p.velocity * (p.price || 0) * (p.leadTime)).toFixed(0) : '0';
+    const projectedLoss = (status !== 'HEALTHY' && (p.velocity || 0) > 0) ? ((p.velocity || 0) * (p.price || 0) * (p.leadTime || 7)).toFixed(0) : '0';
     return { reorderPoint, daysToStockout, status, projectedLoss };
   };
 
@@ -122,6 +138,14 @@ export default function StockIntelligenceDashboard() {
     link.click();
     triggerToast("DATA EXPORTED");
   };
+
+  async function submitRestockOrder(p: ProductIntelligence, qty: number) {
+    const success = await handleUpdateProduct(p.id, { restockStatus: 'pending', incomingStock: qty });
+    if (success) {
+      triggerToast(`${p.sku}: REPLENISHMENT PULSE TRIGGERED`);
+      setIsRestockModalOpen(false);
+    }
+  }
 
   const navItems = [
     { name: 'Dashboard', icon: Home },
@@ -211,7 +235,7 @@ export default function StockIntelligenceDashboard() {
                 </button>
               </div>
               <button 
-                onClick={() => { setActiveItem({ id: '', name: '', sku: '', category: 'General', stock: 0, min: 10, velocity: 1.0, leadTime: 7, safetyBuffer: 15, restockStatus: 'none', incomingStock: 0, isArchived: false } as any); setIsEditModalOpen(true); }}
+                onClick={() => { setActiveItem({ id: '', name: '', sku: '', category: 'General', stock: 0, min: 10, velocity: 1.0, leadTime: 7, safetyBuffer: 15, restockStatus: 'none', incomingStock: 0, isArchived: false }); setIsEditModalOpen(true); }}
                 className="flex items-center gap-3 px-6 h-[52px] bg-slate-900 text-white rounded-2xl shadow-xl shadow-slate-900/10 text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all"
               >
                 <Plus className="w-4 h-4" /> <span className="hidden lg:inline">Add Product</span>
@@ -225,7 +249,6 @@ export default function StockIntelligenceDashboard() {
         {/* 📊 CONTENT PULSE */}
         <div className="p-6 lg:p-12 space-y-12">
           
-          {/* Header Dashboard Summary */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="space-y-2">
                <div className="flex items-center gap-2 mb-2">
@@ -239,7 +262,6 @@ export default function StockIntelligenceDashboard() {
             </div>
           </div>
 
-          {/* Stat Cards Layer */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
              {[
                { id: 'all', label: 'Total SKUs', val: products.length, icon: Package, color: 'indigo' },
@@ -248,7 +270,11 @@ export default function StockIntelligenceDashboard() {
                { id: 'risk', label: 'Value At Risk', val: `₹${Math.floor(Number(products.reduce((acc, p) => acc + parseFloat(calculateIntelligence(p).projectedLoss), 0)) / 1000)}k`, icon: DollarSign, color: 'emerald' },
              ].map(stat => (
                <div key={stat.id} className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm relative overflow-hidden group">
-                  <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6", `bg-${stat.color}-50 text-${stat.color}-600`)}>
+                  <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6", 
+                    stat.color === 'indigo' ? "bg-indigo-50 text-indigo-600" : 
+                    stat.color === 'rose' ? "bg-rose-50 text-rose-600" :
+                    stat.color === 'amber' ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-emerald-600"
+                  )}>
                      <stat.icon className="w-7 h-7" />
                   </div>
                   <h3 className="text-3xl font-black text-slate-900 tracking-tight">{stat.val}</h3>
@@ -257,7 +283,6 @@ export default function StockIntelligenceDashboard() {
              ))}
           </div>
 
-          {/* Adaptive Asset Grid (3 Desktop, 2 Tablet, 1 Mobile) */}
           <section className="space-y-8">
              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2">
@@ -321,12 +346,12 @@ export default function StockIntelligenceDashboard() {
                          <div className="space-y-3">
                             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                                <span className="text-slate-400">Inventory Level</span>
-                               <span className="text-slate-900">{Math.round((p.stock / (intel.reorderPoint * 2)) * 100)}%</span>
+                               <span className="text-slate-900">{Math.round((p.stock / (intel.reorderPoint * 2 || 1)) * 100)}%</span>
                             </div>
                             <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50 p-0.5 shadow-inner">
                                <div 
                                  className={cn("h-full rounded-full transition-all duration-700", isCritical ? "bg-rose-500" : "bg-indigo-600")} 
-                                 style={{ width: `${Math.min(100, (p.stock / (intel.reorderPoint * 2)) * 100)}%` }} 
+                                 style={{ width: `${Math.min(100, (p.stock / (intel.reorderPoint * 2 || 1)) * 100)}%` }} 
                                />
                             </div>
                          </div>
@@ -338,7 +363,7 @@ export default function StockIntelligenceDashboard() {
                                </div>
                             ) : (
                                <button 
-                                 onClick={() => { setActiveItem(p); setRestockQty(Math.max(50, Math.ceil(p.velocity * 30))); setIsRestockModalOpen(true); }}
+                                 onClick={() => { setActiveItem(p); setRestockQty(Math.max(50, Math.ceil((p.velocity || 1) * 30))); setIsRestockModalOpen(true); }}
                                  className={cn("w-full py-5 rounded-[28px] text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/5 active:scale-95 flex items-center justify-center gap-3", isCritical ? "bg-indigo-600 text-white hover:bg-slate-900" : "bg-white border-2 border-slate-100 text-slate-400 hover:border-slate-300")}
                                >
                                   <Truck className="w-4 h-4" /> Initiate Restock
@@ -359,7 +384,7 @@ export default function StockIntelligenceDashboard() {
           </section>
         </div>
 
-        {/* 📉 GLOBAL ANALYTICS LAYER (Responsive) */}
+        {/* 📉 GLOBAL ANALYTICS LAYER */}
         <section className="px-6 lg:p-12 pb-32">
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
               <div className="bg-slate-900 rounded-[56px] p-8 md:p-12 text-white shadow-2xl relative overflow-hidden flex flex-col">
@@ -403,19 +428,17 @@ export default function StockIntelligenceDashboard() {
         </section>
       </main>
 
-      {/* 📥 MODALS & DRAWERS (Responsive) */}
+      {/* 📥 MODALS & DRAWERS */}
       
-      {/* Toast Notification */}
       <AnimatePresence>
         {isToastOpen && (
-          <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: -40, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-24 lg:bottom-12 left-1/2 -track-x-1/2 -translate-x-1/2 z-[1000] bg-slate-900 text-white px-8 py-5 rounded-full shadow-4xl flex items-center gap-4 border border-white/5">
+          <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: -40, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-24 lg:bottom-12 left-1/2 -translate-x-1/2 z-[1000] bg-slate-900 text-white px-8 py-5 rounded-full shadow-4xl flex items-center gap-4 border border-white/5">
              <Check className="w-5 h-5 text-emerald-400" />
              <p className="text-[10px] font-black uppercase tracking-widest">{toastMessage}</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Mobile Sidebar Mock (Drawer-Menu) */}
       <AnimatePresence>
          {mobileMenuOpen && (
             <div className="fixed inset-0 z-[2000] xl:hidden flex items-end">
@@ -433,13 +456,11 @@ export default function StockIntelligenceDashboard() {
                         </button>
                      ))}
                   </div>
-                  <button onClick={exportToCSV} className="w-full py-6 mt-4 bg-indigo-50 text-indigo-600 rounded-3xl font-black uppercase tracking-widest text-xs">Export Enterprise Logs</button>
                </motion.div>
             </div>
          )}
       </AnimatePresence>
 
-      {/* Restock & Provisioning Modals (Responsive Full Width on Mobile) */}
       <AnimatePresence>
         {(isRestockModalOpen || isEditModalOpen) && activeItem && (
           <div className="fixed inset-0 z-[1000] flex items-end lg:items-center justify-center p-0 md:p-6 bg-slate-900/80 backdrop-blur-3xl overflow-y-auto overflow-x-hidden">
@@ -466,7 +487,7 @@ export default function StockIntelligenceDashboard() {
                         <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-[40px] space-y-4 shadow-inner">
                            <div className="flex justify-between items-center text-sm font-black">
                               <span className="text-slate-400 uppercase text-[10px] tracking-widest">Recommended Surge</span>
-                              <span className="text-indigo-600 text-3xl">+{Math.ceil(activeItem.velocity * 30)} <span className="text-xs italic">UNITS</span></span>
+                              <span className="text-indigo-600 text-3xl">+{Math.ceil((activeItem.velocity || 0) * 30)} <span className="text-xs italic">UNITS</span></span>
                            </div>
                            <p className="text-xs font-bold text-slate-500 italic opacity-70 leading-relaxed">&quot;Calculated pulse based on velocity of {activeItem.velocity} u/day. This surge covers 30 days of estimated demand.&quot;</p>
                         </div>
@@ -503,12 +524,4 @@ export default function StockIntelligenceDashboard() {
 
     </div>
   );
-
-  async function submitRestockOrder(p: ProductIntelligence, qty: number) {
-    const success = await handleUpdateProduct(p.id, { restockStatus: 'pending', incomingStock: qty });
-    if (success) {
-      triggerToast(`${p.sku}: REPLENISHMENT PULSE TRIGGERED`);
-      setIsRestockModalOpen(false);
-    }
-  }
 }
