@@ -1,0 +1,53 @@
+
+> ecom-pro-admin@0.1.0 build
+> next build
+
+⚠ `eslint` configuration in next.config.ts is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+⚠ Invalid next.config.ts options detected: 
+⚠     Unrecognized key(s) in object: 'eslint'
+⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+▲ Next.js 16.2.2 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 12.2s
+  Skipping validation of types
+  Finished TypeScript config validation in 42ms ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/23) ...
+  Generating static pages using 7 workers (5/23) 
+  Generating static pages using 7 workers (11/23) 
+  Generating static pages using 7 workers (17/23) 
+✓ Generating static pages using 7 workers (23/23) in 1450ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /admin
+├ ○ /admin/alerts
+├ ○ /admin/analytics
+├ ○ /admin/audit
+├ ○ /admin/automation
+├ ○ /admin/catalog
+├ ○ /admin/catalog/edit
+├ ○ /admin/catalog/new
+├ ○ /admin/customers
+├ ○ /admin/health
+├ ○ /admin/intelligence
+├ ○ /admin/inventory
+├ ○ /admin/login
+├ ○ /admin/orders
+├ ○ /admin/settings
+├ ○ /admin/warehouse
+├ ƒ /api/orders
+├ ƒ /api/products
+├ ƒ /api/warehouse/events
+├ ○ /checkout
+├ ○ /demo/pdp
+└ ƒ /product/[id]
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

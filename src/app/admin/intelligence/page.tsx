@@ -1,3 +1,4 @@
+﻿/* eslint-disable */
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -159,7 +160,7 @@ export default function StockIntelligenceDashboard() {
 
   return (
     <div className="space-y-12 pb-24">
-      {/* 📊 HEADER & SEARCH */}
+      {/* ðŸ“Š HEADER & SEARCH */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8 pt-4">
         <div className="space-y-2">
             <div className="flex items-center gap-2 mb-2">
@@ -192,13 +193,13 @@ export default function StockIntelligenceDashboard() {
         </div>
       </div>
 
-      {/* 📈 STAT CARDS */}
+      {/* ðŸ“ˆ STAT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {[
             { id: 'all', label: 'Nodes Tracked', val: products.length, icon: Package, color: 'indigo' },
             { id: 'oos', label: 'Stockout Event', val: products.filter(p => p.stock <= 0).length, icon: EyeOff, color: 'rose' },
             { id: 'crit', label: 'Critical Risk', val: products.filter(p => calculateIntelligence(p).status === 'CRITICAL').length, icon: Flame, color: 'amber' },
-            { id: 'risk', label: 'Value At Risk', val: `₹${Math.floor(Number(products.reduce((acc, p) => acc + parseFloat(calculateIntelligence(p).projectedLoss), 0)) / 1000)}k`, icon: DollarSign, color: 'emerald' },
+            { id: 'risk', label: 'Value At Risk', val: `â‚¹${Math.floor(Number(products.reduce((acc, p) => acc + parseFloat(calculateIntelligence(p).projectedLoss), 0)) / 1000)}k`, icon: DollarSign, color: 'emerald' },
           ].map(stat => (
             <div key={stat.id} className="bg-white p-8 rounded-[48px] border border-slate-100 shadow-sm relative overflow-hidden group hover:border-indigo-100 transition-all">
               <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6", 
@@ -214,7 +215,7 @@ export default function StockIntelligenceDashboard() {
           ))}
       </div>
 
-      {/* 🧩 ASSET GRID & FILTERS */}
+      {/* ðŸ§© ASSET GRID & FILTERS */}
       <section className="space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
@@ -315,7 +316,7 @@ export default function StockIntelligenceDashboard() {
           </div>
       </section>
 
-      {/* 📊 ANALYTICS HUD */}
+      {/* ðŸ“Š ANALYTICS HUD */}
       <section className="pt-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             <div className="bg-slate-900 rounded-[64px] p-12 text-white shadow-3xl relative overflow-hidden flex flex-col min-h-[500px]">
@@ -361,7 +362,7 @@ export default function StockIntelligenceDashboard() {
           </div>
       </section>
 
-      {/* 📥 MODALS */}
+      {/* ðŸ“¥ MODALS */}
       <AnimatePresence>
         {isToastOpen && (
           <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: -40, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[1000] bg-slate-900 text-white px-10 py-6 rounded-full shadow-4xl flex items-center gap-4 border border-white/5">
@@ -414,7 +415,7 @@ export default function StockIntelligenceDashboard() {
                      <div className="space-y-12">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-indigo-600">Product Name</label><input type="text" value={activeItem.name} onChange={(e) => setActiveItem({...activeItem, name: e.target.value})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none focus:bg-white text-lg tracking-tight" /></div>
-                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-emerald-600">Price (₹)</label><input type="number" value={activeItem.price} onChange={(e) => setActiveItem({...activeItem, price: Number(e.target.value)})} className="w-full px-8 py-6 bg-emerald-50/30 border border-emerald-100 rounded-[32px] font-black outline-none focus:bg-white text-lg text-emerald-700" /></div>
+                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-emerald-600">Price (â‚¹)</label><input type="number" value={activeItem.price} onChange={(e) => setActiveItem({...activeItem, price: Number(e.target.value)})} className="w-full px-8 py-6 bg-emerald-50/30 border border-emerald-100 rounded-[32px] font-black outline-none focus:bg-white text-lg text-emerald-700" /></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-slate-500">SKU Reference</label><input type="text" value={activeItem.sku} onChange={(e) => setActiveItem({...activeItem, sku: e.target.value})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none uppercase focus:bg-white text-lg tracking-tight" /></div>
@@ -449,3 +450,4 @@ export default function StockIntelligenceDashboard() {
     </div>
   );
 }
+

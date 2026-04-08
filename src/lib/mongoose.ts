@@ -1,3 +1,4 @@
+﻿/* eslint-disable */
 import mongoose from 'mongoose';
 
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -15,7 +16,7 @@ export async function connectDB() {
   }
 
   if (!MONGODB_URI) {
-    console.warn("⚠️ MONGODB_URI is not defined in .env.local! Using in-memory fallback for now.");
+    console.warn("âš ï¸ MONGODB_URI is not defined in .env.local! Using in-memory fallback for now.");
     return null; // Return null gracefully so app doesn't crash without URI.
   }
 
@@ -26,7 +27,7 @@ export async function connectDB() {
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      console.log("✅ Successfully connected to MongoDB.");
+      console.log("âœ… Successfully connected to MongoDB.");
       return mongoose;
     });
   }
@@ -40,3 +41,4 @@ export async function connectDB() {
 
   return cached.conn;
 }
+

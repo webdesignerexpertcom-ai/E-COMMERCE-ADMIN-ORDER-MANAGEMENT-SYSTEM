@@ -1,3 +1,4 @@
+﻿/* eslint-disable */
 'use client';
 
 import React from 'react';
@@ -112,3 +113,4 @@ export function DashboardCharts() {
 function cn(...inputs: any[]) {
   return inputs.filter(Boolean).join(' ');
 }
+

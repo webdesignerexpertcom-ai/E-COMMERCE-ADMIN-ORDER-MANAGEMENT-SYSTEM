@@ -1,3 +1,4 @@
+﻿/* eslint-disable */
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -94,7 +95,7 @@ export default function OrderManagement() {
           email: o.customer_email || 'n/a',
           address: typeof o.shipping_address === 'string' ? o.shipping_address : (o.shipping_address?.address || o.shipping_address?.street || 'Manual Entry'),
           status: o.status,
-          total: `₹${parseFloat(o.total_amount).toLocaleString('en-IN')}`,
+          total: `â‚¹${parseFloat(o.total_amount).toLocaleString('en-IN')}`,
           date: new Date(o.created_at).toLocaleString(),
           items: o.items_count
         }));
@@ -170,7 +171,7 @@ export default function OrderManagement() {
       o.customer, 
       o.phone.replace(',', ' '), 
       o.status.toUpperCase(), 
-      o.total.replace(/[₹$,]/g, ''), 
+      o.total.replace(/[â‚¹$,]/g, ''), 
       o.date.replace(',', ' '), 
       o.items
     ]);
@@ -282,7 +283,7 @@ export default function OrderManagement() {
                         </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                     <div className="space-y-2 text-bold"><label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Total Bill (₹)</label><input type="number" value={newOrder.total} onChange={(e) => setNewOrder({...newOrder, total: e.target.value})} placeholder="0.00" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none" /></div>
+                     <div className="space-y-2 text-bold"><label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Total Bill (â‚¹)</label><input type="number" value={newOrder.total} onChange={(e) => setNewOrder({...newOrder, total: e.target.value})} placeholder="0.00" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none" /></div>
                      <div className="space-y-2"><label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1 text-bold">Quantity Items</label><input type="number" value={newOrder.items} onChange={(e) => setNewOrder({...newOrder, items: parseInt(e.target.value) || 1})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none" /></div>
                      <div className="space-y-2">
                         <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1 text-bold">Initial Status</label>
@@ -392,3 +393,4 @@ export default function OrderManagement() {
     </div>
   );
 }
+

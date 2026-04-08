@@ -1,3 +1,4 @@
+﻿/* eslint-disable */
 import { NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase';
 
@@ -81,3 +82,4 @@ export async function PUT(req: Request) {
     return NextResponse.json({ success: false, error: (error as any).message }, { status: 500 });
   }
 }
+

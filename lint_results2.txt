@@ -1,0 +1,96 @@
+
+> ecom-pro-admin@0.1.0 lint
+> eslint
+
+
+C:\Users\SR Services\ecom website admin and clint\src\app\admin\alerts\page.tsx
+   9:4  warning  'Clock' is defined but never used       @typescript-eslint/no-unused-vars
+  10:4  warning  'TrendingUp' is defined but never used  @typescript-eslint/no-unused-vars
+  11:4  warning  'ArrowRight' is defined but never used  @typescript-eslint/no-unused-vars
+  16:4  warning  'Filter' is defined but never used      @typescript-eslint/no-unused-vars
+  18:4  warning  'Trash2' is defined but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\SR Services\ecom website admin and clint\src\app\admin\analytics\page.tsx
+   5:3   warning  'BarChart3' is defined but never used              @typescript-eslint/no-unused-vars
+   6:3   warning  'TrendingUp' is defined but never used             @typescript-eslint/no-unused-vars
+   7:3   warning  'TrendingDown' is defined but never used           @typescript-eslint/no-unused-vars
+  10:3   warning  'Calendar' is defined but never used               @typescript-eslint/no-unused-vars
+  14:3   warning  'Info' is defined but never used                   @typescript-eslint/no-unused-vars
+  18:3   warning  'LineChart' is defined but never used              @typescript-eslint/no-unused-vars
+  18:14  warning  'Line' is defined but never used                   @typescript-eslint/no-unused-vars
+  18:20  warning  'AreaChart' is defined but never used              @typescript-eslint/no-unused-vars
+  18:31  warning  'Area' is defined but never used                   @typescript-eslint/no-unused-vars
+  18:37  warning  'Cell' is defined but never used                   @typescript-eslint/no-unused-vars
+  18:43  warning  'PieChart' is defined but never used               @typescript-eslint/no-unused-vars
+  18:53  warning  'Pie' is defined but never used                    @typescript-eslint/no-unused-vars
+  32:7   warning  'stockoutLoss' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\SR Services\ecom website admin and clint\src\app\admin\audit\page.tsx
+  5:3  warning  'History' is defined but never used  @typescript-eslint/no-unused-vars
+  9:3  warning  'User' is defined but never used     @typescript-eslint/no-unused-vars
+
+C:\Users\SR Services\ecom website admin and clint\src\app\admin\automation\page.tsx
+   3:27  warning  'useEffect' is defined but never used        @typescript-eslint/no-unused-vars
+  10:3   warning  'AlertCircle' is defined but never used      @typescript-eslint/no-unused-vars
+  11:3   warning  'CheckCircle2' is defined but never used     @typescript-eslint/no-unused-vars
+  12:3   warning  'Database' is defined but never used         @typescript-eslint/no-unused-vars
+  15:3   warning  'ArrowRight' is defined but never used       @typescript-eslint/no-unused-vars
+  17:18  warning  'AnimatePresence' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\SR Services\ecom website admin and clint\src\app\admin\catalog\edit\page.tsx
+    6:3   warning  'Plus' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+    9:3   warning  'Layers' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   11:3   warning  'Trash2' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   14:3   warning  'DollarSign' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   15:3   warning  'X' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   18:10  warning  'cn' is defined but never used                                                                                                                                                                                                                                                           @typescript-eslint/no-unused-vars
+   20:10  warning  'VariantEditor' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  250:34  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  250:34  warning  img elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                                jsx-a11y/alt-text
+
+C:\Users\SR Services\ecom website admin and clint\src\app\admin\catalog\new\page.tsx
+  310:31  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  314:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\SR Services\ecom website admin and clint\src\app\admin\catalog\page.tsx
+   5:3  warning  'Package' is defined but never used       @typescript-eslint/no-unused-vars
+  10:3  warning  'MoreVertical' is defined but never used  @typescript-eslint/no-unused-vars
+  11:3  warning  'ChevronRight' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\SR Services\ecom website admin and clint\src\app\admin\customers\page.tsx
+   5:3  warning  'Users' is defined but never used         @typescript-eslint/no-unused-vars
+   8:3  warning  'ChevronRight' is defined but never used  @typescript-eslint/no-unused-vars
+   9:3  warning  'Mail' is defined but never used          @typescript-eslint/no-unused-vars
+  10:3  warning  'Phone' is defined but never used         @typescript-eslint/no-unused-vars
+  16:3  warning  'MoreVertical' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\SR Services\ecom website admin and clint\src\app\admin\login\page.tsx
+   14:3   warning  'MessageSquare' is defined but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+   15:3   warning  'Key' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   17:18  warning  'AnimatePresence' is defined but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  160:24  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\SR Services\ecom website admin and clint\src\app\checkout\page.tsx
+   53:16  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  144:14  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  326:37  warning  'idx' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  329:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  425:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  426:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  427:19  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\SR Services\ecom website admin and clint\src\app\demo\pdp\page.tsx
+  78:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\SR Services\ecom website admin and clint\src\app\product\[id]\page.tsx
+  301:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\SR Services\ecom website admin and clint\src\components\admin\VariantEditor.tsx
+   9:3   warning  'ChevronDown' is defined but never used      @typescript-eslint/no-unused-vars
+  10:3   warning  'Box' is defined but never used              @typescript-eslint/no-unused-vars
+  11:3   warning  'Tag' is defined but never used              @typescript-eslint/no-unused-vars
+  17:10  warning  'cn' is defined but never used               @typescript-eslint/no-unused-vars
+  18:18  warning  'AnimatePresence' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 63 problems (0 errors, 63 warnings)
+
