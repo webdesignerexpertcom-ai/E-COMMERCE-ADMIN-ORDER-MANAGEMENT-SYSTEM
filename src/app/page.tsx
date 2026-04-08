@@ -215,7 +215,7 @@ export default function ProEcoStorefront() {
                               <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mt-1">{item.size || 'Standard'}</p>
                               <div className="flex items-center gap-3 mt-3">
                                  <div className="flex items-center bg-slate-50 rounded-full px-2 py-1 border border-slate-100">
-                                    <button onClick={() => updateQuantity(item.id, item.size, -1)} className="w-6 h-6 flex items-center justify-center font-black text-[#4A2617] hover:bg-[#FFD700] rounded-full transition-colors">>−</button>
+                                    <button onClick={() => updateQuantity(item.id, item.size, -1)} className="w-6 h-6 flex items-center justify-center font-black text-[#4A2617] hover:bg-[#FFD700] rounded-full transition-colors">-</button>
                                     <span className="w-8 text-center text-xs font-black">{item.quantity}</span>
                                     <button onClick={() => updateQuantity(item.id, item.size, 1)} className="w-6 h-6 flex items-center justify-center font-black text-[#4A2617] hover:bg-[#FFD700] rounded-full transition-colors">+</button>
                                  </div>
@@ -328,7 +328,7 @@ export default function ProEcoStorefront() {
                                       onClick={() => updateProductQty(product.id, -1)}
                                       className="w-14 h-14 bg-white text-[#4A2617] rounded-full shadow-sm flex items-center justify-center text-3xl font-black hover:bg-emerald-50 transition-all active:scale-90 border border-slate-100"
                                    >
-                                      −
+                                      -
                                    </button>
                                    <div className="flex flex-col items-center">
                                       <span className="text-3xl font-black text-[#4A2617] font-serif leading-none">{quantity}</span>
