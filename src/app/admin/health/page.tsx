@@ -3,23 +3,27 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Activity, 
-  ShieldCheck, 
   Database, 
-  Zap, 
-  Clock, 
   Server,
-  AlertCircle,
   CheckCircle2,
   RefreshCw,
-  Search
+  Zap,
+  ShieldCheck
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+interface HealthStats {
+  database: { status: string; latency: string; uptime: string };
+  api: { status: string; calls: string; errors: string };
+  inventory: { health: string; anomalies: number; sync: string };
+  security: { audit: string; firewall: string; risks: string };
+}
+
 export default function HealthScan() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
-  const [healthData, setHealthData] = useState<any>(null);
+  const [healthData, setHealthData] = useState<HealthStats | null>(null);
 
   const performScan = () => {
     setIsScanning(true);
@@ -31,13 +35,14 @@ export default function HealthScan() {
       setScanProgress(prev => {
         if (prev >= 100) {
           clearInterval(interval);
-          setIsScanning(false);
-          setHealthData({
+          const mockData: HealthStats = {
             database: { status: 'Optimal', latency: '42ms', uptime: '99.99%' },
             api: { status: 'Verified', calls: '12,402 / day', errors: '0.01%' },
             inventory: { health: '94%', anomalies: 2, sync: 'Real-time' },
             security: { audit: 'Passed', firewall: 'Active', risks: 'Zero' }
-          });
+          };
+          setIsScanning(false);
+          setHealthData(mockData);
           return 100;
         }
         return prev + 5;
@@ -46,7 +51,9 @@ export default function HealthScan() {
   };
 
   useEffect(() => {
-    performScan();
+    // Intentional scan on mount
+    const timer = setTimeout(() => performScan(), 0);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
