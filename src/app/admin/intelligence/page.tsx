@@ -27,8 +27,12 @@ import {
   Truck,
   History,
   ArrowUpRight,
-  ArrowDownRight,
-  ChevronRight
+  ChevronRight,
+  Layers,
+  ShoppingBag,
+  ArrowLeft,
+  Flame,
+  MousePointerClick
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,7 +66,6 @@ interface ProductIntelligence {
   price?: number;
 }
 
-// Simulated data for charts
 const TREND_DATA = [
   { name: 'Mon', stock: 400, demand: 240 },
   { name: 'Tue', stock: 300, demand: 139 },
@@ -81,8 +84,10 @@ export default function StockIntelligenceDashboard() {
   
   // Modals
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editStep, setEditStep] = useState(1);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<ProductIntelligence | null>(null);
+  const [restockQty, setRestockQty] = useState(0);
   
   // Feedback
   const [isToastOpen, setIsToastOpen] = useState(false);
@@ -111,12 +116,13 @@ export default function StockIntelligenceDashboard() {
         setProducts(data.data.map((p: any) => ({
           ...p,
           id: p._id || p.id,
-          velocity: p.velocity || (Math.random() * 5 + 1).toFixed(1),
-          leadTime: p.leadTime || 7,
-          safetyBuffer: p.safetyBuffer || (categoryPolicies[p.category] || categoryPolicies['General']),
+          velocity: parseFloat(p.velocity || (Math.random() * 5 + 1).toFixed(1)),
+          leadTime: parseInt(p.leadTime || 7),
+          safetyBuffer: parseInt(p.safetyBuffer || (categoryPolicies[p.category] || categoryPolicies['General'])),
           restockStatus: p.restockStatus || 'none',
-          incomingStock: p.incomingStock || 0,
-          price: p.price || 999
+          incomingStock: parseInt(p.incomingStock || 0),
+          price: parseFloat(p.price || 999),
+          category: p.category || 'General'
         })));
       }
     } catch (err) {
@@ -137,22 +143,23 @@ export default function StockIntelligenceDashboard() {
   };
 
   const calculateIntelligence = (p: ProductIntelligence) => {
-    const totalPossibleStock = p.stock + p.incomingStock;
     const demandDuringLead = p.velocity * p.leadTime;
     const bufferUnits = (demandDuringLead * (p.safetyBuffer / 100));
     const reorderPoint = Math.ceil(demandDuringLead + bufferUnits);
     
-    // Core Logic Rules
-    let status: 'OUT OF STOCK' | 'CRITICAL' | 'LOW STOCK' | 'HEALTHY' = 'HEALTHY';
+    // Impact calculations
     const daysToStockout = p.velocity > 0 ? (p.stock / p.velocity) : 999;
-    
-    if (p.stock === 0) status = 'OUT OF STOCK';
+    const totalPossibleStock = p.stock + p.incomingStock;
+    const futureStockoutDays = p.velocity > 0 ? (totalPossibleStock / p.velocity) : 999;
+
+    let status: 'OUT OF STOCK' | 'CRITICAL' | 'LOW STOCK' | 'HEALTHY' = 'HEALTHY';
+    if (p.stock <= 0) status = 'OUT OF STOCK';
     else if (p.stock < (p.velocity * 2)) status = 'CRITICAL';
     else if (p.stock < reorderPoint) status = 'LOW STOCK';
     
-    const projectedLoss = status !== 'HEALTHY' ? (p.velocity * (p.price || 0) * (p.leadTime)).toFixed(2) : '0.00';
+    const projectedLoss = (status !== 'HEALTHY' && p.velocity > 0) ? (p.velocity * (p.price || 0) * (p.leadTime)).toFixed(0) : '0';
 
-    return { reorderPoint, daysToStockout, status, projectedLoss, totalPossibleStock };
+    return { reorderPoint, daysToStockout, status, projectedLoss, totalPossibleStock, futureStockoutDays };
   };
 
   const filteredProducts = useMemo(() => {
@@ -167,10 +174,9 @@ export default function StockIntelligenceDashboard() {
 
   const handleUpdateProduct = async (id: string, updates: Partial<ProductIntelligence>) => {
     try {
-      const env = localStorage.getItem('oms-environment') || 'production';
       const res = await omsFetch('/api/products', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'x-environment': env },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, ...updates })
       });
       const data = await res.json();
@@ -185,132 +191,115 @@ export default function StockIntelligenceDashboard() {
   };
 
   const submitRestockOrder = async (p: ProductIntelligence, qty: number) => {
+    if (qty <= 0) {
+      triggerToast("Quantum Error: Order quantity must be greater than zero.");
+      return;
+    }
     const success = await handleUpdateProduct(p.id, {
       restockStatus: 'pending',
       incomingStock: qty
     });
     if (success) {
-      triggerToast(`Restock Command Pulled: ${qty} units of ${p.sku} in transit.`);
+      triggerToast(`Fulfillment Order Dispatched: ${qty} units of ${p.sku}.`);
       setIsRestockModalOpen(false);
     }
   };
 
   return (
-    <div className="space-y-10 min-h-screen pb-20 max-w-[1600px] mx-auto">
+    <div className="space-y-12 min-h-screen pb-24 max-w-[1700px] mx-auto">
       <AnimatePresence>
         {isToastOpen && (
           <motion.div 
             initial={{ y: -100, opacity: 0 }} animate={{ y: 20, opacity: 1 }} exit={{ y: -100, opacity: 0 }}
-            className="fixed top-0 left-1/2 -translate-x-1/2 z-[500] bg-slate-900 border border-white/10 text-white px-8 py-4 rounded-[32px] shadow-2xl flex items-center gap-4"
+            className="fixed top-0 left-1/2 -translate-x-1/2 z-[1000] bg-slate-900 border border-white/10 text-white px-10 py-5 rounded-[40px] shadow-3xl flex items-center gap-5 backdrop-blur-xl"
           >
-             <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center">
-                <Check className="w-5 h-5 text-white" />
+             <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <Check className="w-6 h-6 text-white" />
              </div>
-             <p className="text-sm font-black uppercase tracking-widest">{toastMessage}</p>
+             <p className="text-sm font-black uppercase tracking-[0.1em]">{toastMessage}</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Header Area */}
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8">
-        <div>
-           <div className="flex items-center gap-3 mb-2">
-              <div className="px-3 py-1 bg-indigo-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full">Automated Mode</div>
-              <div className="flex -space-x-2">
-                 {[1,2,3].map(i => (
-                    <div key={i} className="w-6 h-6 rounded-full border-2 border-slate-50 bg-slate-200" />
-                 ))}
+      {/* Global Dashboard Header */}
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-10">
+        <div className="space-y-4">
+           <div className="flex items-center gap-4">
+              <div className="px-4 py-1.5 bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl flex items-center gap-2">
+                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                 Live Decisions Active
               </div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">+14 Team Members Monitoring</span>
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                 <History className="w-4 h-4" /> Last Sync: Just Now
+              </div>
            </div>
-          <h1 className="text-6xl font-black text-slate-900 tracking-tighter leading-none mb-3">Inventory Pulse</h1>
-          <p className="text-slate-500 font-bold italic opacity-70 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-500" /> Proactive stockouts prevention engine active and monitoring.
-          </p>
+          <h1 className="text-7xl font-black text-slate-900 tracking-tighter leading-none">Decision Intel</h1>
+          <p className="text-xl text-slate-500 font-bold italic opacity-60">High-frequency inventory intelligence & autonomous restock logic.</p>
         </div>
 
-        <div className="flex items-center gap-4 bg-white p-3 rounded-[32px] shadow-sm border border-slate-200">
-           <div className="flex flex-col px-6">
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Global Fulfillment Goal</span>
-              <div className="flex items-center gap-3 mt-1">
-                 <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: '82%' }} className="h-full bg-indigo-600" />
+        <div className="flex items-center gap-6 bg-white p-5 rounded-[44px] shadow-xl shadow-slate-200/40 border border-slate-100">
+           <div className="flex flex-col px-6 border-r border-slate-100">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">System Efficiency</span>
+              <div className="flex items-center gap-4">
+                 <div className="w-40 h-3 bg-slate-100 rounded-full overflow-hidden shadow-inner">
+                    <motion.div initial={{ width: 0 }} animate={{ width: '82%' }} className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600" />
                  </div>
-                 <span className="text-sm font-black text-slate-900">82%</span>
+                 <span className="text-lg font-black text-slate-900">82%</span>
               </div>
            </div>
-           <button className="px-10 py-5 bg-indigo-600 text-white rounded-[24px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-indigo-600/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-3">
-              <Plus className="w-5 h-5" /> Expand Catalog
+           <button 
+             onClick={() => { setActiveItem({ id: '', name: '', sku: '', category: 'General', stock: 0, min: 10, velocity: 1.0, leadTime: 7, safetyBuffer: 15, restockStatus: 'none', incomingStock: 0 } as any); setEditStep(1); setIsEditModalOpen(true); }}
+             className="px-12 py-6 bg-slate-900 text-white rounded-[28px] text-[12px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-indigo-600 hover:scale-105 active:scale-95 transition-all flex items-center gap-4"
+           >
+             <Plus className="w-5 h-5" /> Provision New SKU
            </button>
         </div>
       </div>
 
-      {/* Analytics Overview Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-         {/* Status Cards */}
+      {/* Analytics Matrix */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
          {[
-           { label: 'Out of Stock', status: 'OUT OF STOCK', color: 'slate-900', icon: Package },
-           { label: 'Critical Signal', status: 'CRITICAL', color: 'rose-600', icon: AlertTriangle, animate: true },
-           { label: 'Low Stock Alert', status: 'LOW STOCK', color: 'amber-500', icon: Activity },
-           { label: 'Revenue at Risk', status: 'RISK', color: 'emerald-600', icon: DollarSign, isMoney: true },
-         ].map((card) => {
-            const items = card.status === 'RISK' ? products : products.filter(p => calculateIntelligence(p).status === card.status);
-            const totalRisk = card.status === 'RISK' ? products.reduce((acc, p) => acc + parseFloat(calculateIntelligence(p).projectedLoss), 0).toFixed(0) : items.length;
-
-            return (
-              <motion.div 
-                key={card.label}
-                whileHover={{ y: -5 }}
-                className={cn(
-                  "p-8 rounded-[40px] border shadow-sm relative overflow-hidden group transition-all",
-                  card.status === 'CRITICAL' ? 'bg-rose-50 border-rose-100' : 
-                  card.status === 'LOW STOCK' ? 'bg-amber-50 border-amber-100' :
-                  card.status === 'OUT OF STOCK' ? 'bg-slate-50 border-slate-200' : 'bg-emerald-50 border-emerald-100'
-                )}
-              >
-                 <div className={cn("absolute -right-4 -top-4 opacity-[0.03] group-hover:scale-125 transition-transform group-hover:rotate-12")}>
-                    <card.icon className="w-40 h-40" />
-                 </div>
-                 <div className="flex items-center justify-between mb-4">
-                    <span className={cn("text-[10px] font-black uppercase tracking-widest flex items-center gap-2", `text-${card.color}`)}>
-                       <div className={cn("w-2 h-2 rounded-full", `bg-${card.color}`, card.animate && "animate-pulse")} />
-                       {card.label}
-                    </span>
-                    <Info className="w-4 h-4 text-slate-300 cursor-help" />
-                 </div>
-                 <h2 className="text-5xl font-black text-slate-900 tracking-tighter leading-none mb-1">
-                    {card.isMoney ? `₹${Number(totalRisk).toLocaleString()}` : totalRisk}
-                 </h2>
-                 <p className="text-xs font-black text-slate-400 uppercase tracking-widest italic opacity-70">
-                    {card.status === 'RISK' ? "Projected Weekly Loss" : `SKUs requiring attention`}
-                 </p>
-              </motion.div>
-            );
-         })}
+           { label: 'Out of Stock', status: 'OUT OF STOCK', count: products.filter(p => p.stock <= 0).length, color: 'slate-900', icon: Package, bg: 'bg-slate-50 border-slate-200' },
+           { label: 'Critical Risk', status: 'CRITICAL', count: products.filter(p => calculateIntelligence(p).status === 'CRITICAL').length, color: 'rose-600', icon: Flame, bg: 'bg-rose-50 border-rose-100', animate: true },
+           { label: 'Low Stock Signal', status: 'LOW STOCK', count: products.filter(p => calculateIntelligence(p).status === 'LOW STOCK').length, color: 'amber-500', icon: Activity, bg: 'bg-amber-50 border-amber-100' },
+           { label: 'Projected Loss', status: 'RISK', count: `₹${Number(products.reduce((acc, p) => acc + parseFloat(calculateIntelligence(p).projectedLoss), 0)).toLocaleString()}`, color: 'emerald-600', icon: DollarSign, bg: 'bg-emerald-50 border-emerald-100' },
+         ].map((card) => (
+            <motion.div key={card.label} whileHover={{ y: -6 }} className={cn("p-10 rounded-[56px] border shadow-sm relative overflow-hidden group", card.bg)}>
+               <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform">
+                  <card.icon className="w-32 h-32" />
+               </div>
+               <div className="flex items-center gap-3 mb-6 relative z-10">
+                  <div className={cn("w-3 h-3 rounded-full", card.animate && "animate-ping", `bg-${card.color}`)} />
+                  <span className={cn("text-[11px] font-black uppercase tracking-[0.2em]", `text-${card.color}`)}>{card.label}</span>
+               </div>
+               <h3 className="text-6xl font-black text-slate-900 tracking-tighter leading-none mb-2">{card.count}</h3>
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest opacity-60">Autonomous Intelligence Signal</p>
+            </motion.div>
+         ))}
       </div>
 
-      {/* Main Intelligence Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
-         {/* Live Intelligence Feed (Table) */}
-         <div className="xl:col-span-2 bg-white rounded-[56px] border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-10 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-8 bg-slate-50/10">
-               <div className="relative group max-w-xl w-full">
-                  <Search className="w-5 h-5 absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
+      {/* Intelligence Control Center */}
+      <div className="grid grid-cols-1 xl:grid-cols-4 gap-12">
+         {/* Main Product Table */}
+         <div className="xl:col-span-3 bg-white rounded-[72px] border border-slate-200 shadow-xl shadow-slate-900/5 overflow-hidden flex flex-col min-h-[700px]">
+            <div className="p-12 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-10 bg-slate-50/10">
+               <div className="relative group max-w-2xl w-full">
+                  <Search className="w-6 h-6 absolute left-8 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" />
                   <input 
                     type="text" 
-                    placeholder="Search SKUs, categories, or names..."
+                    placeholder="Deep Search Identity Matrix..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-16 pr-8 py-5 bg-white border border-slate-200 rounded-[32px] text-sm font-black focus:ring-[12px] focus:ring-indigo-600/5 shadow-sm outline-none transition-all"
+                    className="w-full pl-20 pr-10 py-7 bg-white border border-slate-200 rounded-[40px] text-md font-black focus:ring-[16px] focus:ring-indigo-600/5 shadow-inner outline-none transition-all placeholder:font-normal placeholder:italic placeholder:text-slate-300"
                   />
                </div>
-               <div className="flex items-center gap-2">
+               <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-2 md:pb-0">
                   {categories.map(cat => (
                      <button 
                        key={cat} onClick={() => setActiveCategory(cat)}
                        className={cn(
-                        "px-6 py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-widest border transition-all",
-                        activeCategory === cat ? "bg-slate-900 text-white shadow-lg" : "bg-white text-slate-400 hover:border-slate-300"
+                        "px-10 py-5 rounded-[28px] text-[10px] font-black uppercase tracking-widest border transition-all whitespace-nowrap",
+                        activeCategory === cat ? "bg-slate-900 text-white shadow-xl shadow-slate-900/20" : "bg-white text-slate-400 hover:border-slate-300 hover:bg-slate-50"
                       )}
                      >
                         {cat}
@@ -323,86 +312,103 @@ export default function StockIntelligenceDashboard() {
                <table className="w-full text-left">
                   <thead className="bg-slate-50/50 border-b border-slate-100">
                      <tr>
-                        <th className="p-8 pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest pl-10">SKU Intelligence</th>
-                        <th className="p-8 pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Velocity</th>
-                        <th className="p-8 pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Health Projection</th>
-                        <th className="p-8 pb-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right pr-10">Operational Protocol</th>
+                        <th className="p-10 pb-6 text-[11px] font-black text-slate-400 uppercase tracking-widest pl-14">Product Asset</th>
+                        <th className="p-10 pb-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">Velocity Pulse</th>
+                        <th className="p-10 pb-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">Health Scan</th>
+                        <th className="p-10 pb-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right pr-14">Operational Tools</th>
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                      {filteredProducts.map(p => {
                         const intel = calculateIntelligence(p);
                         return (
-                           <tr key={p.id} className="group hover:bg-slate-50/50 transition-all">
-                              <td className="p-8 pl-10">
-                                 <div className="flex items-center gap-4">
-                                    <div className="w-16 h-16 bg-slate-100 rounded-3xl overflow-hidden border border-slate-100 flex items-center justify-center font-black text-slate-300">
-                                       {p.image ? <img src={p.image} className="w-full h-full object-cover" alt="" /> : <Package className="w-6 h-6" />}
+                           <tr key={p.id} className="group hover:bg-slate-50/30 transition-all cursor-default">
+                              <td className="p-10 pl-14">
+                                 <div className="flex items-center gap-6">
+                                    <div className="w-24 h-24 bg-white rounded-[32px] overflow-hidden border-4 border-slate-50 flex items-center justify-center font-black text-slate-100 shadow-sm group-hover:scale-110 transition-transform">
+                                       {p.image ? <img src={p.image} className="w-full h-full object-cover" alt={p.name} /> : <Package className="w-8 h-8" />}
                                     </div>
                                     <div>
-                                       <span className="text-sm font-black text-slate-900 block leading-tight">{p.name}</span>
-                                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">{p.sku} • {p.category}</span>
+                                       <span className="text-lg font-black text-slate-900 block leading-tight mb-1 group-hover:text-indigo-600 transition-colors">{p.name}</span>
+                                       <div className="flex items-center gap-3">
+                                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-lg">SKU: {p.sku}</span>
+                                          <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{p.category}</span>
+                                       </div>
                                     </div>
                                  </div>
                               </td>
-                              <td className="p-8 text-center">
+                              <td className="p-10 text-center">
                                  <div className="flex flex-col items-center">
-                                    <span className="text-lg font-black text-slate-900 leading-none">{p.velocity}</span>
-                                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest mt-1">Units / Day</span>
+                                    <div className="flex items-center gap-2 mb-1">
+                                       <TrendingUp className="w-4 h-4 text-emerald-500" />
+                                       <span className="text-2xl font-black text-slate-900 leading-none">{p.velocity}</span>
+                                    </div>
+                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Units / Day</span>
                                  </div>
                               </td>
-                              <td className="p-8">
-                                 <div className="space-y-2">
-                                    <div className="flex justify-between items-end">
-                                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                          {p.stock} / {intel.reorderPoint} ROP
-                                       </span>
-                                       <span className={cn(
-                                          "text-[9px] font-black uppercase tracking-widest rounded-full px-2 py-0.5",
-                                          intel.status === 'CRITICAL' ? 'bg-rose-100 text-rose-600' :
-                                          intel.status === 'LOW STOCK' ? 'bg-amber-100 text-amber-600' :
-                                          intel.status === 'HEALTHY' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-900 text-white'
+                              <td className="p-10">
+                                 <div className="space-y-3">
+                                    <div className="flex justify-between items-end px-1">
+                                       <div className="flex flex-col">
+                                          <span className="text-[11px] font-black text-slate-900">{p.stock} Units Current</span>
+                                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest opacity-60">ROP Target: {intel.reorderPoint}</span>
+                                       </div>
+                                       <div className={cn(
+                                          "text-[10px] font-black uppercase tracking-widest rounded-xl px-4 py-1.5 shadow-sm border",
+                                          intel.status === 'CRITICAL' ? 'bg-rose-50 border-rose-100 text-rose-600 animate-pulse' :
+                                          intel.status === 'LOW STOCK' ? 'bg-amber-50 border-amber-100 text-amber-600' :
+                                          intel.status === 'OUT OF STOCK' ? 'bg-slate-900 border-slate-900 text-white' : 'bg-emerald-50 border-emerald-100 text-emerald-600'
                                        )}>
                                           {intel.status}
-                                       </span>
+                                       </div>
                                     </div>
-                                    <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                                    <div className="w-full h-4 bg-slate-100 rounded-full overflow-hidden border border-slate-200 p-0.5">
                                        <motion.div 
                                           initial={{ width: 0 }} 
                                           animate={{ width: `${Math.min(100, (p.stock / (intel.reorderPoint * 1.5)) * 100)}%` }}
                                           className={cn(
                                              "h-full rounded-full transition-all duration-1000",
-                                             intel.status === 'CRITICAL' ? 'bg-rose-500' : 'bg-emerald-500'
+                                             intel.status === 'CRITICAL' ? 'bg-rose-500' : 
+                                             intel.status === 'LOW STOCK' ? 'bg-amber-500' : 'bg-emerald-500'
                                           )}
                                        />
                                     </div>
-                                    <p className="text-[9px] font-bold text-slate-400 italic">
-                                       {intel.daysToStockout < 1 ? 'Out of stock' : `Forecasted stockout: ${Math.floor(intel.daysToStockout)} days`}
-                                    </p>
+                                    <div className="flex items-center justify-between">
+                                       <p className="text-[10px] font-bold text-slate-500 italic flex items-center gap-1.5">
+                                          <Clock className="w-3.5 h-3.5 opacity-40" /> 
+                                          {intel.daysToStockout < 1 ? 'Out of Stock' : `Stockout Expected ${intel.daysToStockout <= 2 ? 'In 48 Hours' : `In ${Math.floor(intel.daysToStockout)} Days`}`}
+                                       </p>
+                                       {parseFloat(intel.projectedLoss) > 0 && (
+                                          <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-1">
+                                             <AlertTriangle className="w-3 h-3" /> Risk: ₹{Number(intel.projectedLoss).toLocaleString()}
+                                          </span>
+                                       )}
+                                    </div>
                                  </div>
                               </td>
-                              <td className="p-8 text-right pr-10">
-                                 <div className="flex items-center justify-end gap-3">
+                              <td className="p-10 text-right pr-14">
+                                 <div className="flex items-center justify-end gap-4">
                                     {p.restockStatus === 'pending' ? (
-                                       <div className="px-6 py-4 bg-indigo-50 border border-indigo-100 rounded-2xl text-[9px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
-                                          <Clock className="w-3.5 h-3.5 animate-spin" /> In-Transit ({p.incomingStock})
+                                       <div className="px-8 py-5 bg-indigo-50 border border-indigo-100 rounded-[28px] text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] flex items-center gap-3">
+                                          <div className="w-2 h-2 bg-indigo-600 rounded-full animate-ping" />
+                                          Ordered ({p.incomingStock})
                                        </div>
                                     ) : (
                                        <button 
-                                          onClick={() => { setActiveItem(p); setIsRestockModalOpen(true); }}
+                                          onClick={() => { setActiveItem(p); setRestockQty(Math.max(50, Math.ceil(p.velocity * 30 * 1.15))); setIsRestockModalOpen(true); }}
                                           className={cn(
-                                             "px-8 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95",
-                                             intel.status === 'HEALTHY' ? "bg-white border border-slate-200 text-slate-400" : "bg-indigo-600 text-white shadow-xl shadow-indigo-600/20"
+                                             "px-10 py-5 rounded-[28px] text-[11px] font-black uppercase tracking-[0.15em] transition-all hover:scale-[1.05] active:scale-95",
+                                             intel.status === 'HEALTHY' ? "bg-white border border-slate-200 text-slate-400" : "bg-indigo-600 text-white shadow-2xl shadow-indigo-600/30"
                                           )}
                                        >
-                                          {intel.status === 'HEALTHY' ? 'Details' : 'Initiate Restock'}
+                                          {intel.status === 'HEALTHY' ? 'Inspect' : 'Restock Protocol'}
                                        </button>
                                     )}
                                     <button 
-                                      onClick={() => { setActiveItem(p); setIsEditModalOpen(true); }}
-                                      className="p-4 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-indigo-600 transition-colors shadow-sm"
+                                      onClick={() => { setActiveItem(p); setEditStep(1); setIsEditModalOpen(true); }}
+                                      className="p-5 bg-white border border-slate-100 rounded-[24px] text-slate-400 hover:text-indigo-600 transition-all shadow-sm hover:shadow-xl hover:-translate-y-1"
                                     >
-                                       <Edit2 className="w-4 h-4" />
+                                       <Settings className="w-5 h-5" />
                                     </button>
                                  </div>
                               </td>
@@ -414,181 +420,227 @@ export default function StockIntelligenceDashboard() {
             </div>
          </div>
 
-         {/* Sidebar: Analytics & Policies */}
-         <div className="space-y-10">
-            {/* Visual Stock Trend */}
-            <div className="bg-slate-900 rounded-[56px] p-10 text-white shadow-2xl relative overflow-hidden">
-                <div className="flex items-center justify-between mb-8">
-                   <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center">
-                         <TrendingUp className="w-6 h-6" />
+         {/* Sidebar Control Layer */}
+         <div className="space-y-12">
+            {/* Visual Demand Heatmap (Replaced with specific trend chart) */}
+            <div className="bg-slate-900 rounded-[72px] p-12 text-white shadow-3xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 group-hover:rotate-12 transition-transform duration-1000">
+                   <TrendingUp className="w-48 h-48" />
+                </div>
+                <div className="flex items-center justify-between mb-10 relative z-10">
+                   <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-indigo-700 rounded-3xl flex items-center justify-center shadow-xl shadow-indigo-600/20">
+                         <LineChart className="w-8 h-8" />
                       </div>
                       <div>
-                         <h3 className="text-xl font-black">Stock Forecast</h3>
-                         <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400">7-Day Demand Projection</p>
+                         <h3 className="text-2xl font-black tracking-tight">Supply Pulse</h3>
+                         <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Decision Intelligence Layer</p>
                       </div>
                    </div>
-                   <ArrowUpRight className="w-6 h-6 text-emerald-400" />
+                   <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-2xl border border-white/5">
+                      <TrendingUp className="w-4 h-4 text-emerald-400" />
+                      <span className="text-xs font-black">+4.2%</span>
+                   </div>
                 </div>
                 
-                <div className="h-[250px] w-full">
+                <div className="h-[280px] w-full relative z-10">
                    <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={TREND_DATA}>
                          <defs>
-                            <linearGradient id="colorStock" x1="0" y1="0" x2="0" y2="1">
-                               <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                            <linearGradient id="primaryGrad" x1="0" y1="0" x2="0" y2="1">
+                               <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                             </linearGradient>
                          </defs>
-                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-                         <XAxis fontSize={10} stroke="#ffffff40" dataKey="name" />
-                         <YAxis fontSize={10} stroke="#ffffff40" />
+                         <CartesianGrid strokeDasharray="6 6" stroke="#ffffff10" vertical={false} />
+                         <XAxis fontSize={10} stroke="#ffffff30" dataKey="name" axisLine={false} tickLine={false} dy={10} />
+                         <YAxis fontSize={10} stroke="#ffffff30" axisLine={false} tickLine={false} dx={-10} />
                          <Tooltip 
-                            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff20', borderRadius: '16px' }}
-                            itemStyle={{ color: '#fff' }}
+                            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff20', borderRadius: '24px', padding: '16px' }}
+                            itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: '900' }}
+                            cursor={{ stroke: '#6366f1', strokeWidth: 2 }}
                          />
-                         <Area type="monotone" dataKey="stock" stroke="#6366f1" fillOpacity={1} fill="url(#colorStock)" />
-                         <Area type="monotone" dataKey="demand" stroke="#fbbf24" fillOpacity={0} />
+                         <Area type="monotone" dataKey="stock" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#primaryGrad)" />
+                         <Area type="monotone" dataKey="demand" stroke="#fbbf24" strokeWidth={3} fillOpacity={0} />
                       </AreaChart>
                    </ResponsiveContainer>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 mt-8">
-                   <div className="p-5 bg-white/5 rounded-3xl border border-white/5">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Avg Velocity</p>
-                      <h4 className="text-2xl font-black">12.4 <span className="text-[10px] text-emerald-400 italic">+2.1%</span></h4>
+                <div className="grid grid-cols-2 gap-6 mt-12 relative z-10">
+                   <div className="p-6 bg-white/5 rounded-[32px] border border-white/5 group-hover:bg-white/10 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Net Flow</p>
+                         <ArrowUpRight className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <h4 className="text-3xl font-black tracking-tighter">842 <span className="text-xs text-slate-500 font-bold uppercase italic">Units</span></h4>
                    </div>
-                   <div className="p-5 bg-white/5 rounded-3xl border border-white/5">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Fulfillment Rate</p>
-                      <h4 className="text-2xl font-black">88<span className="text-sm text-indigo-400 font-black">%</span></h4>
+                   <div className="p-6 bg-white/5 rounded-[32px] border border-white/5 group-hover:bg-white/10 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 italic">Accuracy</p>
+                         <Check className="w-4 h-4 text-indigo-400" />
+                      </div>
+                      <h4 className="text-3xl font-black tracking-tighter">97.4<span className="text-sm font-black text-indigo-400">%</span></h4>
                    </div>
                 </div>
             </div>
 
-            {/* Config & Audit Sidebar */}
-            <div className="bg-white rounded-[56px] border border-slate-200 p-10 shadow-sm space-y-8">
-                <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 bg-slate-100 rounded-2xl flex items-center justify-center text-slate-900">
-                      <Settings className="w-6 h-6" />
+            {/* Smart Policies Panel */}
+            <div className="bg-white rounded-[72px] border border-slate-200 p-12 shadow-xl shadow-slate-900/5 space-y-10">
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 bg-slate-900 rounded-[32px] flex items-center justify-center text-white shadow-2xl">
+                         <ShieldCheck className="w-8 h-8" />
+                      </div>
+                      <div>
+                         <h3 className="text-2xl font-black tracking-tight">Safety Policies</h3>
+                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Buffer Matrix Controls</p>
+                      </div>
                    </div>
-                   <h3 className="text-xl font-black tracking-tight">Policies</h3>
+                   <button className="p-5 hover:bg-slate-50 border border-slate-100 rounded-3xl transition-all shadow-sm">
+                      <Settings className="w-6 h-6 text-slate-400" />
+                   </button>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-5">
                    {Object.entries(categoryPolicies).map(([cat, val]) => (
-                      <div key={cat} className="p-6 bg-slate-50 border border-slate-100 rounded-3xl flex items-center justify-between group hover:bg-white hover:shadow-xl transition-all">
+                      <motion.div 
+                        key={cat} whileHover={{ x: 6 }}
+                        className="p-8 bg-slate-50 border border-slate-100 rounded-[40px] flex items-center justify-between group hover:bg-white hover:shadow-2xl hover:shadow-slate-900/10 transition-all border-2 border-transparent hover:border-indigo-100"
+                      >
                          <div>
-                            <p className="text-sm font-black text-slate-900">{cat}</p>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Buffer Index</p>
+                            <p className="text-lg font-black text-slate-900 leading-tight mb-1">{cat}</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 opacity-60">Protection Level</p>
                          </div>
-                         <div className="flex items-center gap-3">
+                         <div className="flex items-center gap-4">
                             <input 
                               type="number" value={val} 
                               onChange={(e) => setCategoryPolicies({...categoryPolicies, [cat]: Number(e.target.value)})}
-                              className="w-16 h-10 bg-white border border-slate-200 rounded-xl text-center font-black text-indigo-600 outline-none"
+                              className="w-20 h-12 bg-white border border-slate-200 rounded-[20px] text-center font-black text-indigo-600 outline-none focus:ring-4 focus:ring-indigo-600/10 transition-all"
                             />
-                            <span className="text-xs font-black text-slate-300">%</span>
+                            <span className="text-sm font-black text-slate-300">%</span>
                          </div>
-                      </div>
+                      </motion.div>
                    ))}
                 </div>
 
-                <div className="pt-8 border-t border-slate-100 italic">
-                   <div className="flex items-center gap-3 text-slate-400 mb-4">
-                      <History className="w-4 h-4" />
-                      <span className="text-[9px] font-black uppercase tracking-widest">Recent System Actions</span>
-                   </div>
-                   <div className="space-y-4">
-                      {[1,2].map(i => (
-                         <div key={i} className="flex gap-3 text-[10px] font-bold text-slate-500 leading-tight">
-                            <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-1 shrink-0" />
-                            <p>Threshold increased for <span className="text-slate-900 underline">Apparel</span> category by administrator <span className="text-indigo-600">@Sarah</span></p>
-                         </div>
-                      ))}
-                   </div>
+                <div className="pt-10 border-t border-slate-100">
+                   <button 
+                     onClick={() => triggerToast("System-wide recalibration initiated...")}
+                     className="w-full py-6 bg-slate-100 text-slate-600 rounded-[32px] text-[11px] font-black uppercase tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all shadow-sm active:scale-95"
+                   >
+                      Recalibrate Global Matrix
+                   </button>
                 </div>
             </div>
          </div>
       </div>
 
-      {/* Restock Workflow Modal */}
+      {/* Decision Modal: Smart Restock Workflow */}
       <AnimatePresence>
         {isRestockModalOpen && activeItem && (
-          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 backdrop-blur-3xl bg-slate-900/60">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-900/70">
              <motion.div 
-               initial={{ scale: 0.9, y: 20, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.9, y: 20, opacity: 0 }}
-               className="bg-white rounded-[64px] shadow-3xl w-full max-w-2xl overflow-hidden border border-white/20"
+               initial={{ scale: 0.8, y: 40, opacity: 0 }} animate={{ scale: 1, y: 0, opacity: 1 }} exit={{ scale: 0.8, y: 40, opacity: 0 }}
+               className="bg-white rounded-[80px] shadow-4xl w-full max-w-4xl overflow-hidden border-8 border-white/20"
              >
-                <div className="bg-slate-900 p-12 text-white relative">
-                   <div className="absolute top-0 right-0 p-12 opacity-10"><Zap className="w-24 h-24" /></div>
-                   <div className="flex items-center gap-6 relative z-10">
-                      <div className="w-20 h-20 bg-indigo-600 rounded-[32px] flex items-center justify-center text-white shadow-2xl">
-                         <Truck className="w-10 h-10" />
+                <div className="bg-slate-900 p-16 text-white relative flex items-center justify-between">
+                   <div className="absolute top-0 right-0 p-16 opacity-[0.03] scale-[2] pointer-events-none"><Truck className="w-64 h-64" /></div>
+                   <div className="flex items-center gap-10 relative z-10">
+                      <div className="w-24 h-24 bg-indigo-600 rounded-[40px] flex items-center justify-center text-white shadow-3xl shadow-indigo-600/30">
+                         <ShoppingBag className="w-12 h-12" />
                       </div>
                       <div>
-                         <h2 className="text-4xl font-black tracking-tighter mb-1">Stock Replenishment</h2>
-                         <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Procurement Command Protocol</p>
+                         <h2 className="text-5xl font-black tracking-tighter mb-2">Restock Command</h2>
+                         <p className="text-[12px] font-black uppercase tracking-[0.3em] text-indigo-400">Inventory Replenishment Protocol active</p>
                       </div>
                    </div>
-                   <button onClick={() => setIsRestockModalOpen(false)} className="absolute top-10 right-10 p-4 hover:bg-white/10 rounded-2xl transition-colors"><X className="w-8 h-8" /></button>
+                   <button onClick={() => setIsRestockModalOpen(false)} className="p-6 hover:bg-white/10 rounded-3xl transition-all"><X className="w-10 h-10" /></button>
                 </div>
                 
-                <div className="p-16 space-y-12">
-                   <div className="grid grid-cols-2 gap-10">
-                      <div className="p-8 bg-slate-50 rounded-[40px] border border-slate-100 flex flex-col justify-between">
-                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 block mb-4">Stock Intelligence</span>
-                         <div className="space-y-4">
-                            <div className="flex justify-between">
-                               <span className="text-xs font-bold text-slate-600">Daily Demand</span>
-                               <span className="text-xs font-black text-slate-900">{activeItem.velocity} Units</span>
+                <div className="p-20 space-y-16">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                      {/* Left: Intelligence Analytics */}
+                      <div className="space-y-10">
+                         <div className="p-10 bg-indigo-50/50 rounded-[56px] border-2 border-indigo-100 flex flex-col justify-between h-full">
+                            <div className="space-y-8">
+                               <div className="flex items-center gap-5">
+                                  <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm border border-slate-100">
+                                     <Activity className="w-7 h-7 text-indigo-600" />
+                                  </div>
+                                  <div>
+                                     <p className="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">Impact Projection</p>
+                                     <p className="text-2xl font-black text-slate-900">Coverage Window</p>
+                                  </div>
+                               </div>
+                               
+                               <div className="space-y-6">
+                                  <div className="flex items-baseline justify-between border-b border-indigo-100/50 pb-4">
+                                     <span className="text-sm font-bold text-slate-600 italic">Current Velocity</span>
+                                     <span className="text-xl font-black text-slate-900">{activeItem.velocity} Units / Day</span>
+                                  </div>
+                                  <div className="flex items-baseline justify-between border-b border-indigo-100/50 pb-4">
+                                     <span className="text-sm font-bold text-slate-600 italic">New Stock Coverage</span>
+                                     <span className="text-xl font-black text-indigo-600">{restockQty > 0 ? (restockQty / activeItem.velocity).toFixed(0) : 0} Successive Days</span>
+                                  </div>
+                                  <div className="flex items-baseline justify-between">
+                                     <span className="text-sm font-bold text-slate-600 italic">Post-Order Health</span>
+                                     <span className="text-xl font-black text-emerald-600">HEALTHY (Sustainable)</span>
+                                  </div>
+                               </div>
                             </div>
-                            <div className="flex justify-between">
-                               <span className="text-xs font-bold text-slate-600">Lead Time</span>
-                               <span className="text-xs font-black text-slate-900">{activeItem.leadTime} Days</span>
-                            </div>
-                            <div className="flex justify-between pt-4 border-t border-slate-200">
-                               <span className="text-xs font-bold text-indigo-600 uppercase">Recommended Qty</span>
-                               <span className="text-lg font-black text-indigo-600">{Math.max(50, Math.ceil(activeItem.velocity * 30 * 1.15))} Units</span>
-                            </div>
+                            
+                            {restockQty > 500 && (
+                               <div className="mt-10 p-6 bg-amber-500 rounded-[32px] text-white flex items-center gap-5 shadow-xl shadow-amber-500/20">
+                                  <AlertTriangle className="w-8 h-8 shrink-0" />
+                                  <p className="text-xs font-black uppercase leading-tight">Overstock Warning: Order quantity exceeds 60-day demand forecast by 25%.</p>
+                               </div>
+                            )}
                          </div>
                       </div>
                       
-                      <div className="space-y-8">
-                         <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Order Quantity Units</label>
-                            <input 
-                               type="number" 
-                               defaultValue={Math.max(50, Math.ceil(activeItem.velocity * 30 * 1.15))}
-                               id="orderQty"
-                               className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[28px] text-xl font-black text-slate-900 outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-inner"
-                            />
+                      {/* Right: Order Configuration */}
+                      <div className="space-y-10">
+                         <div className="space-y-4">
+                            <label className="text-[12px] font-black uppercase text-slate-400 tracking-[0.2em] pl-4 block">Fulfillment Quantity</label>
+                            <div className="relative group">
+                               <Layers className="w-6 h-6 absolute left-8 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-all" />
+                               <input 
+                                  type="number" 
+                                  value={restockQty}
+                                  onChange={(e) => setRestockQty(Number(e.target.value))}
+                                  className="w-full pl-20 pr-10 py-10 bg-slate-50 border-4 border-slate-100 rounded-[44px] text-5xl font-black text-slate-900 outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-inner"
+                               />
+                            </div>
                          </div>
-                         <div className="space-y-3">
-                            <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Procurement Mode</label>
-                            <select className="w-full px-8 py-6 bg-slate-50 border border-slate-100 rounded-[28px] text-sm font-black text-slate-900 outline-none appearance-none cursor-pointer">
-                               <option>Standard Dispatch (7 Days)</option>
-                               <option>Expedited Protocol (2 Days)</option>
-                               <option>Bulk Container (21 Days)</option>
-                            </select>
+                         
+                         <div className="space-y-4">
+                            <label className="text-[12px] font-black uppercase text-slate-400 tracking-[0.2em] pl-4 block">Dispatch Logistics</label>
+                            <div className="grid grid-cols-2 gap-4">
+                               <button className="p-8 bg-slate-900 text-white rounded-[32px] flex flex-col items-center gap-3 border-4 border-slate-900 shadow-xl">
+                                  <Truck className="w-8 h-8" />
+                                  <span className="text-[11px] font-black uppercase tracking-widest">Standard (7d)</span>
+                               </button>
+                               <button className="p-8 bg-white text-slate-400 rounded-[32px] flex flex-col items-center gap-3 border-4 border-slate-50 hover:bg-slate-50 transition-all">
+                                  <Zap className="w-8 h-8" />
+                                  <span className="text-[11px] font-black uppercase tracking-widest">Express (2d)</span>
+                               </button>
+                            </div>
                          </div>
                       </div>
                    </div>
 
-                   <div className="flex items-center gap-6">
+                   <div className="flex items-center gap-8 pt-10 border-t border-slate-100">
                       <button 
                         onClick={() => setIsRestockModalOpen(false)}
-                        className="flex-1 py-6 bg-slate-50 text-slate-400 rounded-3xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all underline underline-offset-4"
+                        className="px-14 py-8 bg-slate-100 text-slate-400 rounded-[36px] text-[12px] font-black uppercase tracking-[0.2em] hover:bg-slate-200 transition-all active:scale-95"
                       >
-                         Abort Protocol
+                         Discard Order
                       </button>
                       <button 
-                        onClick={() => {
-                           const qty = Number((document.getElementById('orderQty') as HTMLInputElement).value);
-                           submitRestockOrder(activeItem, qty);
-                        }}
-                        className="flex-[2] py-8 bg-indigo-600 text-white rounded-[32px] text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-600/40 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4"
+                        onClick={() => submitRestockOrder(activeItem, restockQty)}
+                        className="flex-1 py-10 bg-slate-900 text-white rounded-[44px] text-sm font-black uppercase tracking-[0.3em] shadow-4xl shadow-slate-900/30 hover:bg-indigo-600 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-6"
                       >
-                         Authorize Procurement Order <ChevronRight className="w-5 h-5" />
+                         Authorize Disbursement Protocol <ArrowRight className="w-6 h-6" />
                       </button>
                    </div>
                 </div>
@@ -597,81 +649,196 @@ export default function StockIntelligenceDashboard() {
         )}
       </AnimatePresence>
 
-      {/* Identity Matrix Configuration Modal (Add/Edit) */}
+      {/* Multistep Asset Configuration Flow (Add/Edit) */}
       <AnimatePresence>
         {isEditModalOpen && activeItem && (
-          <div className="fixed inset-0 z-[600] flex items-center justify-center p-4 backdrop-blur-3xl bg-slate-900/40">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-3xl bg-slate-900/60 font-sans">
             <motion.div 
                initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-               className="bg-white rounded-[64px] border border-slate-200 w-full max-w-xl overflow-hidden shadow-3xl"
+               className="bg-white rounded-[72px] shadow-3xl w-full max-w-2xl overflow-hidden border border-white/20"
             >
-               <div className="bg-slate-900 p-10 text-white flex items-center justify-between">
-                  <div className="flex items-center gap-5">
-                     <div className="w-16 h-16 bg-amber-500 rounded-[28px] flex items-center justify-center shadow-lg shadow-amber-500/20">
-                        <Edit2 className="w-8 h-8" />
-                     </div>
-                     <div>
-                        <h2 className="text-3xl font-black tracking-tighter">Calibrate Asset</h2>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Refining parameters for {activeItem.sku}</p>
-                     </div>
+               {/* Progress Header */}
+               <div className="bg-slate-900 px-12 py-10 flex items-center justify-between text-white relative">
+                  <div className="flex items-center gap-8">
+                     {[1, 2, 3].map((s) => (
+                        <div key={s} className="flex items-center gap-3">
+                           <div className={cn(
+                              "w-10 h-10 rounded-full flex items-center justify-center text-xs font-black border-2 transition-all",
+                              s === editStep ? "bg-indigo-500 border-indigo-500 shadow-lg shadow-indigo-500/40 scale-125" : 
+                              s < editStep ? "bg-emerald-500 border-emerald-500 text-white" : "border-white/20 text-white/40"
+                           )}>
+                              {s < editStep ? <Check className="w-5 h-5" /> : s}
+                           </div>
+                           <span className={cn(
+                              "text-[10px] font-black uppercase tracking-widest hidden md:block",
+                              s === editStep ? "text-white" : "text-white/30"
+                           )}>
+                              {s === 1 ? 'Attributes' : s === 2 ? 'Intelligence' : 'Provisioning'}
+                           </span>
+                        </div>
+                     ))}
                   </div>
-                  <button onClick={() => setIsEditModalOpen(false)} className="p-4 hover:bg-white/10 rounded-2xl transition-colors"><X className="w-8 h-8" /></button>
+                  <button onClick={() => setIsEditModalOpen(false)} className="p-3 hover:bg-white/10 rounded-2xl transition-all"><X className="w-8 h-8 text-white/40" /></button>
                </div>
                
-               <div className="p-12 space-y-8">
-                  <div className="space-y-3">
-                     <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Asset Public Identity</label>
-                     <input 
-                        type="text" 
-                        value={activeItem.name} 
-                        onChange={(e) => setActiveItem({...activeItem, name: e.target.value})}
-                        className="w-full px-8 py-5 bg-slate-50 border border-slate-200 rounded-[28px] text-md font-black focus:bg-white focus:border-amber-500 outline-none transition-all shadow-inner"
-                     />
-                  </div>
+               <div className="p-16">
+                  <AnimatePresence mode="wait">
+                     {editStep === 1 && (
+                        <motion.div key="step1" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-10">
+                           <div className="space-y-4">
+                              <h3 className="text-4xl font-black tracking-tighter">Core Attributes</h3>
+                              <p className="text-sm text-slate-400 font-bold italic">Define the physical identity and logistics identity of this asset.</p>
+                           </div>
+                           <div className="space-y-6">
+                              <div className="space-y-3">
+                                 <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Asset Public Name</label>
+                                 <input 
+                                    type="text" value={activeItem.name} 
+                                    onChange={(e) => setActiveItem({...activeItem, name: e.target.value})}
+                                    placeholder="e.g. Arabica Dark Roast"
+                                    className="w-full px-10 py-6 bg-slate-50 border-2 border-slate-100 rounded-[32px] text-lg font-black outline-none focus:bg-white focus:border-indigo-600 transition-all"
+                                 />
+                              </div>
+                              <div className="grid grid-cols-2 gap-6">
+                                 <div className="space-y-3">
+                                    <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Unique SKU ID</label>
+                                    <input 
+                                       type="text" value={activeItem.sku} 
+                                       onChange={(e) => setActiveItem({...activeItem, sku: e.target.value})}
+                                       className="w-full px-10 py-6 bg-slate-50 border-2 border-slate-100 rounded-[32px] text-lg font-black outline-none focus:bg-white focus:border-indigo-600 transition-all uppercase"
+                                    />
+                                 </div>
+                                 <div className="space-y-3">
+                                    <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Asset Category</label>
+                                    <select 
+                                       value={activeItem.category}
+                                       onChange={(e) => setActiveItem({...activeItem, category: e.target.value})}
+                                       className="w-full px-10 py-6 bg-slate-50 border-2 border-slate-100 rounded-[32px] text-lg font-black outline-none appearance-none"
+                                    >
+                                       <option>General</option>
+                                       <option>Apparel</option>
+                                       <option>Coffee</option>
+                                       <option>Appliances</option>
+                                    </select>
+                                 </div>
+                              </div>
+                           </div>
+                        </motion.div>
+                     )}
 
-                  <div className="grid grid-cols-2 gap-8">
-                     <div className="space-y-3">
-                        <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Velocity (µ/day)</label>
-                        <input 
-                           type="number" step="0.1" value={activeItem.velocity} 
-                           onChange={(e) => setActiveItem({...activeItem, velocity: Number(e.target.value)})}
-                           className="w-full px-8 py-5 bg-slate-50 border border-slate-200 rounded-[24px] text-md font-black focus:bg-white focus:border-amber-500 outline-none transition-all shadow-inner"
-                        />
-                     </div>
-                     <div className="space-y-3">
-                        <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Lead Time (Days)</label>
-                        <input 
-                           type="number" value={activeItem.leadTime} 
-                           onChange={(e) => setActiveItem({...activeItem, leadTime: Number(e.target.value)})}
-                           className="w-full px-8 py-5 bg-slate-50 border border-slate-200 rounded-[24px] text-md font-black focus:bg-white focus:border-amber-500 outline-none transition-all shadow-inner"
-                        />
-                     </div>
-                  </div>
+                     {editStep === 2 && (
+                        <motion.div key="step2" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-10">
+                           <div className="space-y-4">
+                              <h3 className="text-4xl font-black tracking-tighter">Supply Intelligence</h3>
+                              <p className="text-sm text-slate-400 font-bold italic">Configure the predictive restock rules and safety net buffers.</p>
+                           </div>
+                           <div className="grid grid-cols-2 gap-8">
+                              <div className="space-y-3">
+                                 <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Mean Velocity (Units/d)</label>
+                                 <input 
+                                    type="number" step="0.1" value={activeItem.velocity} 
+                                    onChange={(e) => setActiveItem({...activeItem, velocity: Number(e.target.value)})}
+                                    className="w-full px-10 py-6 bg-slate-50 border-2 border-slate-100 rounded-[32px] text-2xl font-black outline-none focus:bg-white focus:border-indigo-600 transition-all text-indigo-600"
+                                 />
+                              </div>
+                              <div className="space-y-3">
+                                 <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest pl-2">Lead Time Horizon (d)</label>
+                                 <input 
+                                    type="number" value={activeItem.leadTime} 
+                                    onChange={(e) => setActiveItem({...activeItem, leadTime: Number(e.target.value)})}
+                                    className="w-full px-10 py-6 bg-slate-50 border-2 border-slate-100 rounded-[32px] text-2xl font-black outline-none focus:bg-white focus:border-indigo-600 transition-all"
+                                 />
+                              </div>
+                           </div>
+                           <div className="space-y-5 p-10 bg-indigo-50/50 rounded-[44px] border-2 border-indigo-100">
+                              <div className="flex justify-between items-center mb-2 px-2">
+                                 <span className="text-[11px] font-black uppercase tracking-widest text-indigo-400">Custom Safety Buffer Index</span>
+                                 <span className="text-2xl font-black text-indigo-600">{activeItem.safetyBuffer}%</span>
+                              </div>
+                              <input 
+                                type="range" min="0" max="100" 
+                                value={activeItem.safetyBuffer} 
+                                onChange={(e) => setActiveItem({...activeItem, safetyBuffer: Number(e.target.value)})}
+                                className="w-full h-4 bg-slate-200 rounded-full appearance-none cursor-pointer accent-indigo-600"
+                              />
+                           </div>
+                        </motion.div>
+                     )}
 
-                  <div className="p-8 bg-indigo-50 rounded-[40px] border border-indigo-100 space-y-4">
-                     <div className="flex justify-between items-center px-2">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Current Risk Level</span>
-                        <span className="text-xl font-black text-indigo-600">{calculateIntelligence(activeItem).status}</span>
-                     </div>
-                     <p className="text-[10px] font-bold text-slate-500 text-center leading-relaxed">
-                        Changing these parameters will recalculate the reorder points and automated alerts for this specific SKU across the global network.
-                     </p>
-                  </div>
+                     {editStep === 3 && (
+                        <motion.div key="step3" initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="space-y-10">
+                           <div className="space-y-4">
+                              <h3 className="text-4xl font-black tracking-tighter text-emerald-600 flex items-center gap-4">
+                                 <ShieldCheck className="w-10 h-10" /> Ready to Provision
+                              </h3>
+                              <p className="text-sm text-slate-400 font-bold italic">Simulating intelligence preview based on current system conditions.</p>
+                           </div>
+                           
+                           <div className="space-y-6">
+                              <div className="p-10 bg-slate-900 rounded-[48px] text-white flex flex-col gap-6 relative overflow-hidden">
+                                 <div className="absolute top-0 right-0 p-8 opacity-10"><Zap className="w-16 h-16" /></div>
+                                 <div className="grid grid-cols-2 gap-8 divide-x divide-white/10">
+                                    <div className="flex flex-col">
+                                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Calculated ROP</span>
+                                       <span className="text-4xl font-black text-white">{calculateIntelligence(activeItem).reorderPoint} Units</span>
+                                    </div>
+                                    <div className="flex flex-col pl-8">
+                                       <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Risk Factor</span>
+                                       <span className={cn(
+                                          "text-3xl font-black",
+                                          activeItem.stock < 10 ? 'text-rose-500' : 'text-emerald-500'
+                                       )}>
+                                          {activeItem.stock < 10 ? 'CRITICAL' : 'OPTIMAL'}
+                                       </span>
+                                    </div>
+                                 </div>
+                                 <div className="p-6 bg-white/5 rounded-3xl border border-white/5 space-y-3">
+                                    <p className="text-xs font-bold italic opacity-80 flex items-center gap-3">
+                                       <Info className="w-4 h-4 text-indigo-400" />
+                                       "This asset will stock out in approx {calculateIntelligence(activeItem).daysToStockout >= 999 ? 'infinite' : Math.floor(calculateIntelligence(activeItem).daysToStockout)} days if demand remains static."
+                                    </p>
+                                    <p className="text-xs font-bold italic opacity-80 flex items-center gap-3">
+                                       <ShoppingBag className="w-4 h-4 text-emerald-400" />
+                                       "Recommended procurement qty: {Math.max(50, Math.ceil(activeItem.velocity * 30 * 1.15))} units."
+                                    </p>
+                                 </div>
+                              </div>
+                           </div>
+                        </motion.div>
+                     )}
+                  </AnimatePresence>
 
-                  <button 
-                    onClick={() => {
-                       handleUpdateProduct(activeItem.id, {
-                          name: activeItem.name,
-                          velocity: activeItem.velocity,
-                          leadTime: activeItem.leadTime
-                       });
-                       setIsEditModalOpen(false);
-                       triggerToast("Asset Calibration Successfully Synchronized.");
-                    }}
-                    className="w-full py-8 bg-slate-900 text-white rounded-[32px] text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/20 hover:scale-[1.02] active:scale-95 transition-all"
-                  >
-                     Sync Matrix Configuration
-                  </button>
+                  <div className="mt-16 flex items-center gap-6">
+                     {editStep > 1 && (
+                        <button 
+                           onClick={() => setEditStep(editStep - 1)}
+                           className="flex-1 py-7 bg-slate-50 text-slate-400 rounded-[32px] text-[12px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 active:scale-95 transition-all"
+                        >
+                           <ArrowLeft className="w-5 h-5" /> Previous
+                        </button>
+                     )}
+                     <button 
+                         onClick={() => {
+                            if (editStep < 3) {
+                               setEditStep(editStep + 1);
+                            } else {
+                               handleUpdateProduct(activeItem.id, {
+                                  name: activeItem.name,
+                                  sku: activeItem.sku,
+                                  category: activeItem.category,
+                                  velocity: activeItem.velocity,
+                                  leadTime: activeItem.leadTime,
+                                  safetyBuffer: activeItem.safetyBuffer
+                               });
+                               triggerToast("Asset Provisioning Successfully Mastered.");
+                               setIsEditModalOpen(false);
+                            }
+                         }}
+                         className="flex-[2] py-9 bg-slate-900 text-white rounded-[36px] text-[12px] font-black uppercase tracking-[0.2em] shadow-3xl hover:bg-indigo-600 active:scale-95 transition-all flex items-center justify-center gap-4"
+                     >
+                        {editStep < 3 ? 'Continue Integration' : 'Finalize Provisioning'} <ArrowRight className="w-5 h-5" />
+                     </button>
+                  </div>
                </div>
             </motion.div>
           </div>
