@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Package, 
@@ -28,46 +28,52 @@ import {
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const initialInventory = [
-  { 
-    id: '1', name: 'XL Blue Shirt', sku: 'SHIRT-BLU-XL', stock: 2, min: 15, status: 'low-stock', price: '₹2,400.00', 
-    variants: [
-      { id: 'v1', size: 'XL', color: 'Blue', stock: 2, sku: 'SHIRT-BLU-XL' },
-      { id: 'v2', size: 'L', color: 'Blue', stock: 15, sku: 'SHIRT-BLU-L' },
-      { id: 'v3', size: 'M', color: 'Blue', stock: 25, sku: 'SHIRT-BLU-M' },
-    ]
-  },
-  { 
-    id: '2', name: 'Ceramic Mug Blue', sku: 'MUG-CER-BLU', stock: 12, min: 25, status: 'low-stock', price: '₹1,500.00', 
-    variants: [] 
-  },
-  { 
-    id: '3', name: 'Milk Frother Pro', sku: 'FRT-PRO-001', stock: 0, min: 10, status: 'out-of-stock', price: '₹4,500.00', 
-    variants: [
-      { id: 'v4', model: 'Pro Black', stock: 0, sku: 'FRT-PRO-BLK' },
-      { id: 'v5', model: 'Pro Silver', stock: 5, sku: 'FRT-PRO-SLV' },
-    ] 
-  },
-  { 
-    id: '4', name: 'Linen Apron Grey', sku: 'APR-LIN-GRY', stock: 85, min: 15, status: 'in-stock', price: '₹3,500.00', 
-    variants: [
-      { id: 'v6', size: 'Standard', color: 'Grey', stock: 85, sku: 'APR-LIN-GRY' },
-    ] 
-  },
-];
+
 
 export default function InventoryHub() {
   const router = useRouter();
-  const [inventory, setInventory] = useState(initialInventory);
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [bulkAdjustment, setBulkAdjustment] = useState({ amount: '0', status: '' });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [activeItem, setActiveItem] = useState<any | null>(null);
   const [isVariantExplorerOpen, setIsVariantExplorerOpen] = useState(false);
+
+  const fetchInventory = async () => {
+    try {
+      const env = localStorage.getItem('oms-environment') || 'production';
+      const res = await fetch('/api/products', {
+        headers: { 'x-environment': env }
+      });
+      const result = await res.json();
+      if (result.success) {
+        // Map API products to Inventory format
+        const mapped = result.data.map((p: any) => ({
+          id: p._id,
+          name: p.name,
+          sku: p.sku || `SKU-${p._id.slice(0, 5).toUpperCase()}`,
+          stock: p.stock_quantity || 0,
+          min: 10,
+          status: (p.stock_quantity || 0) === 0 ? 'out-of-stock' : (p.stock_quantity || 0) < 10 ? 'low-stock' : 'in-stock',
+          price: `₹${p.price?.toLocaleString('en-IN') || '0.00'}`,
+          variants: p.variants || []
+        }));
+        setInventory(mapped);
+      }
+    } catch (err) {
+      console.error("Failed to fetch inventory:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInventory();
+  }, []);
 
   const triggerToast = (msg: string) => {
      setToastMessage(msg);
@@ -75,18 +81,28 @@ export default function InventoryHub() {
      setTimeout(() => setIsToastOpen(false), 3000);
   };
 
-  const adjustStock = (id: string, amount: number) => {
-     setInventory(inventory.map(item => {
-        if (item.id === id) {
-           const newStock = Math.max(0, item.stock + amount);
-           let newStatus = 'in-stock';
-           if (newStock === 0) newStatus = 'out-of-stock';
-           else if (newStock < item.min) newStatus = 'low-stock';
-           return { ...item, stock: newStock, status: newStatus };
-        }
-        return item;
-     }));
-     triggerToast("Inventory Count Updated.");
+  const adjustStock = async (id: string, amount: number) => {
+     const item = inventory.find(i => i.id === id);
+     if (!item) return;
+
+     const newStock = Math.max(0, item.stock + amount);
+     
+     // Optimistic Update
+     setInventory(inventory.map(i => i.id === id ? { ...i, stock: newStock } : i));
+
+     try {
+        const env = localStorage.getItem('oms-environment') || 'production';
+        await fetch('/api/products', {
+           method: 'PUT',
+           headers: { 'Content-Type': 'application/json', 'x-environment': env },
+           body: JSON.stringify({ id, stock: newStock })
+        });
+        triggerToast(`Count Persisted: ${newStock} units.`);
+        fetchInventory(); // Refresh to sync
+     } catch (err) {
+        console.error("Persistence failed:", err);
+        triggerToast("Sync Error: Could not save to cloud.");
+     }
   };
 
   const toggleSelect = (id: string) => {
@@ -98,22 +114,29 @@ export default function InventoryHub() {
      else setSelectedIds(inventory.map(i => i.id));
   };
 
-  const handleBulkApply = () => {
+  const handleBulkApply = async () => {
      const amount = parseInt(bulkAdjustment.amount) || 0;
-     setInventory(inventory.map(item => {
-        if (selectedIds.includes(item.id)) {
+     const env = localStorage.getItem('oms-environment') || 'production';
+
+     triggerToast(`Syncing ${selectedIds.length} SKUs to Cloud...`);
+
+     for (const id of selectedIds) {
+        const item = inventory.find(i => i.id === id);
+        if (item) {
            const newStock = Math.max(0, item.stock + amount);
-           let newStatus = bulkAdjustment.status || item.status;
-           if (newStock === 0) newStatus = 'out-of-stock';
-           else if (newStock < item.min && !bulkAdjustment.status) newStatus = 'low-stock';
-           return { ...item, stock: newStock, status: newStatus };
+           await fetch('/api/products', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json', 'x-environment': env },
+              body: JSON.stringify({ id, stock: newStock })
+           });
         }
-        return item;
-     }));
+     }
+
      setIsBulkModalOpen(false);
      setSelectedIds([]);
      setBulkAdjustment({ amount: '0', status: '' });
-     triggerToast(`Bulk Adjustment applied to ${selectedIds.length} SKUs.`);
+     fetchInventory();
+     triggerToast(`Bulk Sync Complete.`);
   };
 
   const filteredInventory = inventory.filter(p => 
@@ -371,7 +394,15 @@ export default function InventoryHub() {
           </div>
         </div>
 
-        <div className="overflow-x-auto min-h-[500px]">
+        <div className="overflow-x-auto min-h-[500px] relative">
+          {loading && (
+             <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-50 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                   <div className="w-12 h-12 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
+                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 animate-pulse">Syncing Inventory Assets...</p>
+                </div>
+             </div>
+          )}
           <table className="w-full text-left border-collapse min-w-[1300px]">
             <thead>
               <tr className="border-b border-slate-100 bg-slate-50/50">
