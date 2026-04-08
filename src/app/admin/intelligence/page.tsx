@@ -70,13 +70,13 @@ export default function StockIntelligenceDashboard() {
         setProducts(data.data.map((p: any) => ({
           ...p,
           id: p._id || p.id,
-          stock: Number(p.stock || 0),
-          velocity: parseFloat(p.velocity?.toString() || (Math.random() * 2 + 0.5).toFixed(1)),
-          leadTime: parseInt(p.leadTime?.toString() || '7'),
-          safetyBuffer: 15,
-          restockStatus: p.restockStatus || 'none',
-          incomingStock: parseInt(p.incomingStock?.toString() || '0'),
-          price: parseFloat(p.price?.toString() || '999'),
+          stock: Number(p.stock_quantity ?? p.stock ?? 0),
+          velocity: parseFloat(p.sales_velocity?.toString() || p.velocity?.toString() || (Math.random() * 2 + 0.5).toFixed(1)),
+          leadTime: parseInt(p.lead_time_days?.toString() || p.leadTime?.toString() || '7'),
+          safetyBuffer: parseInt(p.safety_buffer_percent?.toString() || '15'),
+          restockStatus: p.restock_status || p.restockStatus || 'none',
+          incomingStock: parseInt(p.incoming_stock?.toString() || p.incomingStock?.toString() || '0'),
+          price: parseFloat(p.price?.toString() || '0'),
           category: p.category || 'General',
           isArchived: !!p.isArchived
         })));
@@ -89,6 +89,9 @@ export default function StockIntelligenceDashboard() {
   const handleUpdateProduct = async (id: string, updates: Partial<ProductIntelligence>) => {
     try {
       const isNew = !id;
+      // Map for POST if new
+      if (isNew && !updates.price) updates.price = 0;
+      
       const res = await omsFetch('/api/products', {
         method: isNew ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -181,7 +184,7 @@ export default function StockIntelligenceDashboard() {
             <Download className="w-6 h-6" />
           </button>
           <button 
-            onClick={() => { setActiveItem({ id: '', name: '', sku: '', category: 'General', stock: 0, min: 10, velocity: 1.0, leadTime: 7, safetyBuffer: 15, restockStatus: 'none', incomingStock: 0, isArchived: false }); setIsEditModalOpen(true); }}
+            onClick={() => { setActiveItem({ id: '', name: '', sku: '', category: 'General', stock: 0, min: 10, velocity: 1.0, leadTime: 7, safetyBuffer: 15, restockStatus: 'none', incomingStock: 0, price: 0, isArchived: false }); setIsEditModalOpen(true); }}
             className="px-8 h-[64px] bg-slate-900 text-white rounded-[24px] shadow-xl shadow-slate-900/10 text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all flex items-center gap-3"
           >
             <Plus className="w-5 h-5" /> Provision SKU
@@ -410,22 +413,20 @@ export default function StockIntelligenceDashboard() {
                    ) : (
                      <div className="space-y-12">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">Name</label><input type="text" value={activeItem.name} onChange={(e) => setActiveItem({...activeItem, name: e.target.value})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none focus:bg-white text-lg tracking-tight" /></div>
-                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">SKU Pulse ID</label><input type="text" value={activeItem.sku} onChange={(e) => setActiveItem({...activeItem, sku: e.target.value})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none uppercase focus:bg-white text-lg tracking-tight" /></div>
+                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-indigo-600">Product Name</label><input type="text" value={activeItem.name} onChange={(e) => setActiveItem({...activeItem, name: e.target.value})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none focus:bg-white text-lg tracking-tight" /></div>
+                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-emerald-600">Price (₹)</label><input type="number" value={activeItem.price} onChange={(e) => setActiveItem({...activeItem, price: Number(e.target.value)})} className="w-full px-8 py-6 bg-emerald-50/30 border border-emerald-100 rounded-[32px] font-black outline-none focus:bg-white text-lg text-emerald-700" /></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-indigo-600">Velocity</label><input type="number" step="0.1" value={activeItem.velocity} onChange={(e) => setActiveItem({...activeItem, velocity: Number(e.target.value)})} className="w-full px-8 py-6 bg-indigo-50/30 border border-indigo-100 rounded-[32px] font-black outline-none focus:bg-white text-lg text-indigo-700" /></div>
-                           <div className="space-y-3">
-                              <label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-rose-600">Inventory Units</label>
-                              <div className="flex gap-4">
-                                <input type="number" value={activeItem.stock} onChange={(e) => setActiveItem({...activeItem, stock: Number(e.target.value)})} className="flex-1 px-8 py-6 bg-rose-50/30 border border-rose-100 rounded-[32px] font-black outline-none focus:bg-white text-lg text-rose-700" />
-                                <button onClick={() => setActiveItem({...activeItem, stock: 0})} className="px-6 bg-rose-600 text-white rounded-[32px] text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform active:scale-95 shadow-lg shadow-rose-600/20">Zero Out</button>
-                              </div>
-                           </div>
+                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-slate-500">SKU Reference</label><input type="text" value={activeItem.sku} onChange={(e) => setActiveItem({...activeItem, sku: e.target.value})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none uppercase focus:bg-white text-lg tracking-tight" /></div>
+                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">Inventory Status</label><div className="flex gap-4"><input type="number" value={activeItem.stock} onChange={(e) => setActiveItem({...activeItem, stock: Number(e.target.value)})} className="flex-1 px-8 py-6 bg-rose-50/30 border border-rose-100 rounded-[32px] font-black outline-none focus:bg-white text-lg text-rose-700" /><button onClick={() => setActiveItem({...activeItem, stock: 0})} className="px-6 bg-rose-600 text-white rounded-[32px] text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform active:scale-95 shadow-lg shadow-rose-600/20">Zero</button></div></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-indigo-600">Daily Velocity</label><input type="number" step="0.1" value={activeItem.velocity} onChange={(e) => setActiveItem({...activeItem, velocity: Number(e.target.value)})} className="w-full px-8 py-6 bg-indigo-50/30 border border-indigo-100 rounded-[32px] font-black outline-none focus:bg-white text-lg text-indigo-700" /></div>
+                           <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-slate-500">Category Tag</label><input type="text" value={activeItem.category} onChange={(e) => setActiveItem({...activeItem, category: e.target.value})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none focus:bg-white text-lg" /></div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                            <div className="space-y-3">
-                              <label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">Restock Status</label>
+                              <label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">Procurement State</label>
                               <select value={activeItem.restockStatus} onChange={(e) => setActiveItem({...activeItem, restockStatus: e.target.value as any})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none focus:bg-white text-lg">
                                  <option value="none">None</option>
                                  <option value="pending">Shipment Ordered</option>
@@ -433,7 +434,7 @@ export default function StockIntelligenceDashboard() {
                               </select>
                            </div>
                            <div className="space-y-3">
-                              <label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">Lifecycle</label>
+                              <label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">Asset Lifecycle</label>
                               <button onClick={() => setActiveItem({...activeItem, isArchived: !activeItem.isArchived})} className={cn("w-full px-8 py-6 border-4 rounded-[32px] font-black text-xs uppercase tracking-widest transition-all", activeItem.isArchived ? "bg-rose-50 border-rose-200 text-rose-600" : "bg-emerald-50 border-emerald-200 text-emerald-600")}>{activeItem.isArchived ? 'Archived' : 'Active Deployment'}</button>
                            </div>
                         </div>
