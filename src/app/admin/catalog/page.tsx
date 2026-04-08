@@ -7,7 +7,6 @@ import {
   Search, 
   Filter, 
   Layers, 
-  ArrowUpRight, 
   MoreVertical, 
   ChevronRight,
   Eye,
@@ -47,10 +46,10 @@ export default function CatalogPage() {
              name: p.name,
              sku: p.sku || `SKU-${String(p._id || p.id).slice(-4)}`,
              category: p.category || 'Organics',
-             price: `₹${p.price?.toFixed(2)}`,
-             stock: p.stock || 0,
-             variants: 0,
-             status: p.status === 'active' ? 'Active' : (p.stock > 0 ? 'Active' : 'Out of Stock')
+             price: `₹${p.price?.toLocaleString('en-IN') || '0.00'}`,
+             stock: p.stock_quantity || 0,
+             variants: p.variants?.length || 0,
+             status: p.status === 'active' ? 'Active' : (p.stock_quantity > 0 ? 'Active' : 'Out of Stock')
            }));
            setProducts(mappedProducts);
         } else if (data.success && data.data.length === 0) {
@@ -91,7 +90,6 @@ export default function CatalogPage() {
         const data = await res.json();
         if(data.success) {
            triggerToast(`Asset ${name} destroyed.`);
-           // Real-time will handle the list update, but we can also do it manually for immediate feedback
            setProducts(prev => prev.filter(p => p.id !== id));
         } else {
            alert("Delete failed: " + data.error);
@@ -102,7 +100,6 @@ export default function CatalogPage() {
      }
   };
 
-  // Real-time Search Engine
   const filteredProducts = products.filter(p => 
      p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
      p.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -111,7 +108,6 @@ export default function CatalogPage() {
 
   return (
     <div className="space-y-8 relative pb-20">
-       {/* High-Premium Toast Layer */}
        <AnimatePresence>
         {isToastOpen && (
           <motion.div 
@@ -196,7 +192,12 @@ export default function CatalogPage() {
           </div>
         </div>
 
-        {filteredProducts.length === 0 ? (
+        {isLoading ? (
+           <div className="p-20 flex flex-col items-center justify-center">
+              <div className="w-12 h-12 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin mb-4" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 animate-pulse">Syncing Catalog Assets...</p>
+           </div>
+        ) : filteredProducts.length === 0 ? (
            <div className="p-20 flex flex-col items-center justify-center text-center">
               <div className="w-24 h-24 bg-slate-50 border-2 border-slate-100 border-dashed rounded-[32px] flex items-center justify-center mb-6">
                  <Search className="w-8 h-8 text-slate-300" />
@@ -277,13 +278,14 @@ export default function CatalogPage() {
                          >
                            <Eye className="w-5 h-5" />
                          </button>
-                         <button 
-                           onClick={() => triggerToast(`Edit Mode Active: ${product.sku}`)}
-                           className="p-3.5 text-slate-400 hover:text-amber-500 bg-white rounded-2xl transition-all border border-slate-100 shadow-sm hover:border-amber-100"
-                           title="Modify Matrix"
-                         >
-                           <Edit2 className="w-5 h-5" />
-                         </button>
+                         <Link href={`/admin/catalog/edit?id=${product.id}`}>
+                            <button 
+                              className="p-3.5 text-slate-400 hover:text-amber-500 bg-white rounded-2xl transition-all border border-slate-100 shadow-sm hover:border-amber-100"
+                              title="Modify Matrix"
+                            >
+                              <Edit2 className="w-5 h-5" />
+                            </button>
+                         </Link>
                          <button 
                            onClick={() => deleteProduct(product.id, product.name)}
                            className="p-3.5 text-slate-400 hover:text-rose-500 bg-white rounded-2xl transition-all border border-slate-100 shadow-sm hover:border-rose-100"
