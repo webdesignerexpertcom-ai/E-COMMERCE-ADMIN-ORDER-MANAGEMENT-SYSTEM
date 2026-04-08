@@ -1,0 +1,108 @@
+Design a modern mobile-first product detail page for a natural food e-commerce app.
+
+Style:
+- Clean, minimal, premium UI
+- Soft pastel background (light beige / off-white)
+- Organic/eco-friendly design
+- Rounded corners, soft shadows
+- Elegant typography (serif for headings, sans-serif for body)
+
+Layout:
+
+1. Product Title Section:
+- Show product name in local language (Telugu) + English translation
+- Example:
+  "చింతకాయ పచ్చడి (Chintakaya Pachadi)"
+- Subtitle description:
+  "Tangy traditional raw tamarind pickle made with fresh green tamarind and spices."
+
+2. Key Benefits Section:
+- Title: "Key Benefits:"
+- Bullet points:
+  - Rich in Vitamin C
+  - Aids Digestion
+  - Traditional Recipe
+- Use small colored dot icons (yellow/gold)
+
+3. Size Selection:
+- Title: "Select Size"
+- Show 3 options:
+  - 250g ₹100 (selected state highlighted with border + glow)
+  - 500g ₹200
+  - 1kg ₹400
+- Rounded pill-style buttons
+- Selected option should have colored border (gold/green)
+
+4. Quantity Selector:
+- Title: "Quantity"
+- Horizontal stepper:
+  [-]   1   [+]
+- Rounded container with soft background
+- Buttons should be elevated (shadow)
+
+5. Add to Cart Button:
+- Full width button
+- Rounded (pill shape)
+- Text: "+ Add to Cart"
+- Soft shadow
+- Subtle hover/press animation
+
+6. UI Behavior:
+- When size changes → update price
+- Quantity stepper updates total
+- Add to cart triggers toast notification
+
+Design Requirements:
+- Mobile-first layout
+- Spacing: generous padding
+- Use subtle animations
+- Premium feel like a modern organic brand
+- No clutter, focus on usability
+
+Color Palette:
+- Primary: Green / Olive
+- Accent: Gold / Yellow
+- Background: Soft cream
+
+Extras:
+- Smooth transitions
+- Touch-friendly UI
+- Clean alignment
+
+
+Build a responsive React + Tailwind product detail page.
+
+Features:
+- Dynamic size selection (updates price)
+- Quantity increment/decrement
+- Add to Cart functionality
+- State management using useState
+
+UI:
+- Telugu + English product title
+- Benefits list
+- Size selector buttons
+- Quantity stepper
+- Add to cart button
+
+Logic:
+- Default size selected (250g)
+- Price updates based on selected size
+- Quantity cannot go below 1
+- Add to cart stores product in cart state
+
+UX:
+- Highlight selected size
+- Button animations
+- Toast message on add to cart
+
+Design:
+- Clean, minimal, eco-friendly
+- Rounded UI
+- Soft shadows
+- Mobile-first
+⭐ Ratings (4.5/5)
+🚚 Delivery info ("Delivery in 2 days")
+❤️ Wishlist button
+🛍️ Sticky Add-to-Cart (bottom bar mobile)
+📦 Stock indicator
