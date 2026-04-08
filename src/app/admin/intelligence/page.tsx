@@ -5,7 +5,6 @@ import {
   Plus, 
   Search, 
   Activity, 
-  TrendingUp,
   Package,
   Check,
   X,
@@ -14,13 +13,16 @@ import {
   MessageSquare,
   Clock,
   History,
-  Truck,
   ChevronRight,
   Menu,
   Layout,
   Settings,
   Flame,
-  DollarSign
+  DollarSign,
+  Download,
+  Archive,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,6 +52,7 @@ interface ProductIntelligence {
   image?: string;
   isDemo?: boolean;
   price?: number;
+  isArchived?: boolean;
 }
 
 const TREND_DATA = [
@@ -72,6 +75,7 @@ export default function StockIntelligenceDashboard() {
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<ProductIntelligence | null>(null);
   const [restockQty, setRestockQty] = useState(0);
+  const [showArchived, setShowArchived] = useState(false);
   
   const [notifications, setNotifications] = useState({ email: true, sms: false, inApp: true });
   const [auditLogs] = useState([
@@ -100,7 +104,8 @@ export default function StockIntelligenceDashboard() {
           restockStatus: p.restockStatus || 'none',
           incomingStock: parseInt(p.incomingStock || 0),
           price: parseFloat(p.price || 999),
-          category: p.category || 'General'
+          category: p.category || 'General',
+          isArchived: !!p.isArchived
         })));
       }
     } catch (err) { console.error(err); }
@@ -141,6 +146,25 @@ export default function StockIntelligenceDashboard() {
     }
   };
 
+  const exportToCSV = () => {
+    const headers = ["SKU", "Name", "Category", "Stock", "Velocity", "Status", "ROP"];
+    const rows = products.map(p => {
+      const intel = calculateIntelligence(p);
+      return [p.sku, p.name, p.category, p.stock, p.velocity, intel.status, intel.reorderPoint];
+    });
+    
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers, ...rows].map(e => e.join(",")).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `intelligence_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    triggerToast("INTELLIGENCE DATA EXPORTED");
+  };
+
   const calculateIntelligence = (p: ProductIntelligence) => {
     const demandDuringLead = p.velocity * p.leadTime;
     const bufferUnits = (demandDuringLead * (p.safetyBuffer / 100));
@@ -156,7 +180,12 @@ export default function StockIntelligenceDashboard() {
 
   const filteredProducts = useMemo(() => {
     return products
-      .filter(p => (p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku.toLowerCase().includes(searchTerm.toLowerCase())) && (activeCategory === 'All' || p.category === activeCategory))
+      .filter(p => {
+        const matchesSearch = (p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.sku.toLowerCase().includes(searchTerm.toLowerCase()));
+        const matchesCategory = (activeCategory === 'All' || p.category === activeCategory);
+        const matchesArchive = showArchived ? p.isArchived : !p.isArchived;
+        return matchesSearch && matchesCategory && matchesArchive;
+      })
       .sort((a, b) => {
         const priority = { 'OUT OF STOCK': 0, 'CRITICAL': 1, 'LOW STOCK': 2, 'HEALTHY': 3 };
         return priority[calculateIntelligence(a).status] - priority[calculateIntelligence(b).status];
@@ -202,7 +231,13 @@ export default function StockIntelligenceDashboard() {
           <h1 className="text-4xl sm:text-7xl font-black text-slate-900 tracking-tighter leading-none">Intelligence</h1>
         </div>
         <div className="flex items-center gap-4">
-           <button onClick={() => { setActiveItem({ id: '', name: '', sku: '', category: 'General', stock: 0, min: 10, velocity: 1.0, leadTime: 7, safetyBuffer: 15, restockStatus: 'none', incomingStock: 0 } as any); setIsEditModalOpen(true); }} className="flex-1 md:flex-none px-10 py-5 bg-slate-900 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-indigo-600 transition-all flex items-center justify-center gap-3">
+           <button 
+             onClick={exportToCSV}
+             className="hidden sm:flex px-6 py-5 bg-white border border-slate-200 text-slate-900 rounded-3xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:border-slate-400 transition-all items-center gap-3"
+           >
+              <Download className="w-4 h-4" /> Export
+           </button>
+           <button onClick={() => { setActiveItem({ id: '', name: '', sku: '', category: 'General', stock: 0, min: 10, velocity: 1.0, leadTime: 7, safetyBuffer: 15, restockStatus: 'none', incomingStock: 0, isArchived: false } as any); setIsEditModalOpen(true); }} className="flex-1 md:flex-none px-10 py-5 bg-slate-900 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-indigo-600 transition-all flex items-center justify-center gap-3">
              <Plus className="w-4 h-4" /> <span className="hidden sm:inline">New SKU</span>
            </button>
            <button onClick={() => setMobileMenuOpen(true)} className="p-5 bg-white border border-slate-200 rounded-3xl text-slate-400 md:hidden shadow-sm"><Menu className="w-6 h-6" /></button>
@@ -229,6 +264,16 @@ export default function StockIntelligenceDashboard() {
               <input type="text" placeholder="Deep Search SKUs..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-16 pr-8 py-5 bg-white border border-slate-200 rounded-3xl text-sm font-black outline-none" />
           </div>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+              <button 
+                onClick={() => setShowArchived(!showArchived)}
+                className={cn(
+                  "px-6 py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-widest border transition-all flex items-center gap-2",
+                  showArchived ? "bg-amber-100 border-amber-200 text-amber-700" : "bg-white text-slate-400"
+                )}
+              >
+                 {showArchived ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                 {showArchived ? 'Viewing Archived' : 'Show Archived'}
+              </button>
               {['All', 'Coffee', 'Apparel', 'Appliances', 'General'].map(cat => (
                   <button key={cat} onClick={() => setActiveCategory(cat)} className={cn("px-6 py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-widest border transition-all whitespace-nowrap", activeCategory === cat ? "bg-slate-900 text-white shadow-lg" : "bg-white text-slate-400")}>{cat}</button>
               ))}
@@ -354,7 +399,31 @@ export default function StockIntelligenceDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                      <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 pl-2">Name</label><input type="text" value={activeItem.name} onChange={(e) => setActiveItem({...activeItem, name: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black outline-none" /></div>
                      <div className="space-y-2"><label className="text-[10px] font-black uppercase text-slate-400 pl-2">SKU ID</label><input type="text" value={activeItem.sku} onChange={(e) => setActiveItem({...activeItem, sku: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black outline-none uppercase" /></div>
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase text-slate-400 pl-2">Category</label>
+                        <select value={activeItem.category} onChange={(e) => setActiveItem({...activeItem, category: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-black outline-none h-full appearance-none">
+                           <option>General</option>
+                           <option>Apparel</option>
+                           <option>Coffee</option>
+                           <option>Appliances</option>
+                        </select>
+                     </div>
                   </div>
+
+                  <div className="flex items-center justify-between p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                     <div className="flex items-center gap-4 text-slate-900">
+                        <Archive className="w-5 h-5" />
+                        <div>
+                           <p className="text-sm font-black">Archive Asset</p>
+                           <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Withdraw from Intelligence Cycle</p>
+                        </div>
+                     </div>
+                     <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" className="sr-only peer" checked={activeItem.isArchived} onChange={(e) => setActiveItem({...activeItem, isArchived: e.target.checked})} />
+                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-amber-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                     </label>
+                  </div>
+
                   <button onClick={async () => { if (await handleUpdateProduct(activeItem.id, activeItem)) { triggerToast(`${activeItem.sku}: PROVISIONED`); setIsEditModalOpen(false); } }} className="w-full py-7 bg-slate-900 text-white rounded-[28px] font-black uppercase tracking-widest shadow-2xl active:scale-95 transition-all text-xs">Authorize Provisioning</button>
                </div>
             </motion.div>
