@@ -81,17 +81,20 @@ export default function StockIntelligenceDashboard() {
 
   const handleUpdateProduct = async (id: string, updates: Partial<ProductIntelligence>) => {
     try {
+      const isNew = !id;
       const res = await omsFetch('/api/products', {
-        method: 'PUT',
+        method: isNew ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...updates })
+        body: JSON.stringify(isNew ? updates : { id, ...updates })
       });
       const data = await res.json();
       if (data.success) {
         fetchProducts();
         return true;
+      } else {
+        triggerToast(data.error || "OPERATION FAILED");
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { console.error(err); triggerToast("NETWORK ERROR"); }
     return false;
   };
 

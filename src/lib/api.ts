@@ -3,7 +3,7 @@
  */
 export async function omsFetch(url: string, options: RequestInit = {}) {
   // Get environment from localStorage
-  const environment = typeof window !== 'undefined' ? (localStorage.getItem('oms-environment') || 'production') : 'production';
+  const environment = typeof window !== 'undefined' ? (localStorage.getItem('oms_environment') || 'production') : 'production';
   
   const headers = new Headers(options.headers || {});
   headers.set('x-environment', environment);

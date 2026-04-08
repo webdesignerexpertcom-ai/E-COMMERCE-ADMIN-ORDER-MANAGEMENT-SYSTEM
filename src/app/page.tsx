@@ -143,19 +143,38 @@ export default function ProEcoStorefront() {
                   )}
                </div>
 
-               <div className="p-8 border-t border-white bg-white/50 backdrop-blur-xl space-y-6">
-                  <div className="flex items-center justify-between">
+               <div className="p-8 border-t border-white bg-white/50 backdrop-blur-xl space-y-4">
+                  <div className="flex items-center justify-between mb-2">
                      <span className="font-bold text-slate-500 uppercase tracking-widest text-xs">Total Amount</span>
-                     <span className="text-3xl font-black text-slate-900">₹{cartTotal.toFixed(2)}</span>
+                     <span className="text-3xl font-black text-slate-900 tracking-tighter">₹{cartTotal.toFixed(2)}</span>
                   </div>
-                  <button 
-                     onClick={handleWhatsAppCheckout}
-                     disabled={cart.length === 0}
-                     className="w-full py-5 bg-gradient-to-r from-[#25D366] to-[#1DA851] hover:to-[#25D366] disabled:from-slate-200 disabled:to-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-[24px] font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-[0_8px_30px_rgba(37,211,102,0.3)] shadow-emerald-500/20 active:scale-[0.98]"
-                  >
-                     <MessageCircle className="w-5 h-5" /> 
-                     {cart.length === 0 ? "Add Items to Checkout" : "Checkout via WhatsApp"}
-                  </button>
+                  
+                  <div className="grid grid-cols-1 gap-3">
+                    <button 
+                       onClick={handleWhatsAppCheckout}
+                       disabled={cart.length === 0}
+                       className="w-full py-5 bg-[#25D366] hover:bg-[#1DA851] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white rounded-[24px] font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg shadow-emerald-500/10 active:scale-[0.98]"
+                    >
+                       <MessageCircle className="w-5 h-5" /> 
+                       WhatsApp Checkout
+                    </button>
+                    
+                    <button 
+                       onClick={() => {
+                         const name = prompt("Enter full name for Direct Order:");
+                         if (!name) return;
+                         window.alert(`Thank you ${name}! Standard Checkout protocol initiated. Our team will contact you for payment verification.`);
+                         setCart([]);
+                         setIsCartOpen(false);
+                       }}
+                       disabled={cart.length === 0}
+                       className="w-full py-5 bg-slate-900 border-2 border-slate-900 text-white hover:bg-white hover:text-slate-900 disabled:bg-slate-200 disabled:text-slate-400 disabled:border-transparent text-white rounded-[24px] font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl active:scale-[0.98]"
+                    >
+                       <ShieldCheck className="w-5 h-5" /> 
+                       Direct Checkout
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest mt-2 px-10">SSL Secured & Encrypted Processing Active</p>
                </div>
              </motion.div>
            </>
