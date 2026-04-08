@@ -62,7 +62,7 @@ export default function EditProductListing() {
             description: p.description || '',
             category: p.category || 'Apparel',
             price: p.price?.toString() || '',
-            sku: p.sku || '',
+            sku: p.sku || `SKU-${String(p._id || p.id).slice(-4)}`,
             quantity: p.stock_quantity?.toString() || '0',
             status: p.status || 'active',
             metaTitle: p.meta_title || '',
@@ -167,7 +167,9 @@ export default function EditProductListing() {
           </button>
           <div>
              <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-tight">Edit Identity</h1>
-             <p className="text-slate-500 font-medium italic opacity-80 font-bold">Modifying SKU: {productData.sku}</p>
+             <p className="text-indigo-600 font-black italic mt-1 uppercase tracking-widest text-[10px]">
+                Modifying SKU: <span className="underline decoration-indigo-300 underline-offset-4">{productData.sku}</span>
+             </p>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -197,6 +199,14 @@ export default function EditProductListing() {
                   value={productData.name}
                   onChange={(e) => setProductData({...productData, name: e.target.value})}
                   className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-[24px] text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none"
+                  placeholder="Product Name"
+                />
+                <input 
+                  type="text" 
+                  value={productData.sku}
+                  onChange={(e) => setProductData({...productData, sku: e.target.value})}
+                  className="w-full px-6 py-4 bg-slate-100 border border-slate-200 rounded-[24px] text-sm font-black text-slate-500 focus:bg-white focus:border-indigo-500 transition-all outline-none"
+                  placeholder="SKU Identity (Read-only reference suggested)"
                 />
                 <textarea 
                   rows={5}
