@@ -4,19 +4,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Activity, 
   AlertTriangle, 
   Zap, 
-  TrendingDown, 
   TrendingUp,
   Package,
   Calendar,
-  ChevronRight,
-  MoreVertical,
-  Layers,
   Edit2,
-  Trash2,
   Check,
   X,
   Bell,
@@ -25,8 +19,8 @@ import {
   Clock,
   ArrowRight,
   ShieldCheck,
-  PackageCheck,
-  Settings
+  Settings,
+  Cpu
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,11 +39,12 @@ interface ProductIntelligence {
   restockStatus: 'none' | 'pending' | 'ordered' | 'completed';
   incomingStock: number;
   image?: string;
+  isDemo?: boolean;
 }
 
 export default function StockIntelligenceDashboard() {
   const [products, setProducts] = useState<ProductIntelligence[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -71,7 +66,7 @@ export default function StockIntelligenceDashboard() {
       const res = await omsFetch('/api/products');
       const data = await res.json();
       if (data.success) {
-        setProducts(data.data.map((p: any) => ({
+        setProducts(data.data.map((p: { id: string; _id?: string; velocity?: number; leadTime?: number; safetyBuffer?: number; restockStatus?: string; incomingStock?: number; isDemo?: boolean; [key: string]: unknown }) => ({
           ...p,
           id: p._id || p.id,
           // Ensure defaults if DB fields are null
@@ -79,7 +74,8 @@ export default function StockIntelligenceDashboard() {
           leadTime: p.leadTime || 7,
           safetyBuffer: p.safetyBuffer || 15,
           restockStatus: p.restockStatus || 'none',
-          incomingStock: p.incomingStock || 0
+          incomingStock: p.incomingStock || 0,
+          isDemo: p.isDemo || ['1','2','3','4'].includes(p.id)
         })));
       }
     } catch (err) {
@@ -139,6 +135,7 @@ export default function StockIntelligenceDashboard() {
         setIsEditModalOpen(false);
       }
     } catch (err) {
+      console.error("Update error:", err);
       triggerToast("Network Link Failure: Update Aborted");
     }
   };
@@ -147,7 +144,6 @@ export default function StockIntelligenceDashboard() {
     if (p.restockStatus !== 'none') return;
     
     // Simulate restock logic
-    const intel = calculateIntelligence(p);
     const orderQuantity = Math.max(50, Math.ceil(p.velocity * 30 * (1 + p.safetyBuffer/100)));
     
     triggerToast(`Replenishment protocol initiated for ${p.sku}...`);
@@ -288,7 +284,7 @@ export default function StockIntelligenceDashboard() {
                              <div className="flex items-center gap-6">
                                 <div className="w-20 h-20 bg-white rounded-[28px] border-2 border-slate-100 flex items-center justify-center p-1 shadow-sm group-hover:scale-110 transition-transform overflow-hidden font-black text-slate-200">
                                    {p.image ? (
-                                     <img src={p.image} className="w-full h-full object-cover rounded-[24px]" />
+                                     <img src={p.image} className="w-full h-full object-cover rounded-[24px]" alt={p.name} />
                                    ) : <Package className="w-8 h-8 opacity-20" />}
                                 </div>
                                 <div>
@@ -479,9 +475,7 @@ export default function StockIntelligenceDashboard() {
                       <input 
                         type="checkbox" 
                         className="sr-only peer" 
-                        //@ts-ignore
-                        checked={notifications[item.id]} 
-                        //@ts-ignore
+                        checked={notifications[item.id as keyof typeof notifications] || false} 
                         onChange={(e) => setNotifications({...notifications, [item.id]: e.target.checked})} 
                       />
                       <div className="w-16 h-9 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-indigo-600"></div>
