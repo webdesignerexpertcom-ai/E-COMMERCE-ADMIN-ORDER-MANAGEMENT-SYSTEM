@@ -41,17 +41,21 @@ export default function CatalogPage() {
       .then(data => {
         if (data.success && data.data.length > 0) {
            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-           const mappedProducts = data.data.map((p: any) => ({
-             id: p._id || p.id,
-             name: p.name,
-             sku: p.sku || `SKU-${String(p._id || p.id).slice(-4)}`,
-             category: p.category || 'Organics',
-             price: `₹${p.price?.toLocaleString('en-IN') || '0.00'}`,
-             stock: p.stock_quantity || 0,
-             variants: p.variants?.length || 0,
-             status: p.status === 'active' ? 'Active' : (p.stock_quantity > 0 ? 'Active' : 'Out of Stock')
-           }));
-           setProducts(mappedProducts);
+            const mappedProducts = data.data.map((p: any) => {
+              const id = p._id || p.id;
+              return {
+                id: id,
+                name: p.name,
+                sku: p.sku || `SKU-${String(id).slice(-4)}`,
+                category: p.category || 'Organics',
+                price: `₹${p.price?.toLocaleString('en-IN') || '0.00'}`,
+                stock: p.stock_quantity || 0,
+                variants: p.variants?.length || 0,
+                status: p.status === 'active' ? 'Active' : (p.stock_quantity > 0 ? 'Active' : 'Out of Stock'),
+                isDemo: ['1','2','3','4'].includes(id)
+              };
+            });
+            setProducts(mappedProducts);
         } else if (data.success && data.data.length === 0) {
            setProducts([]);
         }
@@ -92,7 +96,8 @@ export default function CatalogPage() {
            triggerToast(`Asset ${name} destroyed.`);
            setProducts(prev => prev.filter(p => p.id !== id));
         } else {
-           alert("Delete failed: " + data.error);
+           const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || JSON.stringify(data.error));
+           alert("Delete failed: " + errMsg);
         }
      } catch (err) {
         console.error("Delete error:", err);
@@ -235,6 +240,11 @@ export default function CatalogPage() {
                                </span>
                              )}
                               <span className="text-[10px] font-black text-slate-400 italic uppercase">ID: {product.id}</span>
+                              {product.isDemo && (
+                                <span className="text-[10px] font-black text-white px-3 py-1 bg-slate-900 rounded-lg uppercase tracking-widest ml-2">
+                                  Demo Asset
+                                </span>
+                              )}
                            </div>
                          </div>
                        </div>
@@ -280,16 +290,24 @@ export default function CatalogPage() {
                          </button>
                          <Link href={`/admin/catalog/edit?id=${product.id}`}>
                             <button 
-                              className="p-3.5 text-slate-400 hover:text-amber-500 bg-white rounded-2xl transition-all border border-slate-100 shadow-sm hover:border-amber-100"
-                              title="Modify Matrix"
+                              disabled={product.isDemo}
+                              className={cn(
+                                "p-3.5 bg-white rounded-2xl transition-all border border-slate-100 shadow-sm",
+                                product.isDemo ? "opacity-30 cursor-not-allowed" : "text-slate-400 hover:text-amber-500 hover:border-amber-100"
+                              )}
+                              title={product.isDemo ? "Demo Asset Cannot Be Modified" : "Modify Matrix"}
                             >
                               <Edit2 className="w-5 h-5" />
                             </button>
                          </Link>
                          <button 
+                           disabled={product.isDemo}
                            onClick={() => deleteProduct(product.id, product.name)}
-                           className="p-3.5 text-slate-400 hover:text-rose-500 bg-white rounded-2xl transition-all border border-slate-100 shadow-sm hover:border-rose-100"
-                           title="Destroy Asset"
+                           className={cn(
+                             "p-3.5 bg-white rounded-2xl transition-all border border-slate-100 shadow-sm",
+                             product.isDemo ? "opacity-30 cursor-not-allowed" : "text-slate-400 hover:text-rose-500 hover:border-rose-100"
+                           )}
+                           title={product.isDemo ? "Demo Asset Cannot Be Destroyed" : "Destroy Asset"}
                          >
                            <Trash2 className="w-5 h-5" />
                          </button>

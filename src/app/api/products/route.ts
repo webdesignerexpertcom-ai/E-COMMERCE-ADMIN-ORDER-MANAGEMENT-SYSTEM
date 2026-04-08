@@ -225,6 +225,11 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ success: false, error: 'Product ID is required' }, { status: 400 });
     }
 
+    // Block deletes on demo/fallback products
+    if (DUMMY_IDS.includes(id)) {
+      return NextResponse.json({ success: false, error: 'This is a demo product and cannot be deleted.' }, { status: 400 });
+    }
+
     const { error } = await supabase
       .from('products')
       .delete()
