@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   DollarSign, 
   ShoppingBag, 
@@ -13,6 +13,7 @@ import {
   Zap
 } from 'lucide-react';
 import { omsFetch } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { DashboardCharts } from '@/components/admin/DashboardCharts';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,28 +27,39 @@ interface AlertItem {
   daysLeft: number;
 }
 
+interface OrderRecord {
+  order_id: string;
+  customer_name: string;
+  status: string;
+  total_amount: number | string;
+  created_at: string;
+}
+
 export default function AdminDashboard() {
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [loadingAlerts, setLoadingAlerts] = useState(true);
+  const [loadingOrders, setLoadingOrders] = useState(true);
   
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [orders, setOrders] = useState<OrderRecord[]>([]);
 
-  const fetchAlerts = async () => {
+  const fetchAlerts = useCallback(async () => {
     try {
+      setLoadingAlerts(true);
       const res = await omsFetch('/api/products');
       const result = await res.json();
       if (result.success) {
         const lowStock: AlertItem[] = result.data
-          .filter((p: Record<string, any>) => {
+          .filter((p: { stock_quantity?: number, stock?: number, low_stock_threshold?: number }) => {
             const actualStock = typeof p.stock_quantity !== 'undefined' ? p.stock_quantity : (typeof p.stock !== 'undefined' ? p.stock : 0);
             const threshold = p.low_stock_threshold || 10;
             return actualStock < threshold;
           })
-          .map((p: Record<string, any>) => {
+          .map((p: { _id: string, id: string, name: string, velocity?: number, stock_quantity?: number, stock?: number }) => {
             const actualStock = typeof p.stock_quantity !== 'undefined' ? p.stock_quantity : (typeof p.stock !== 'undefined' ? p.stock : 0);
             return {
-              id: p._id,
+              id: p._id || p.id,
               item: p.name,
               level: actualStock === 0 ? 'Out of Stock' : `Critical: ${actualStock} left`,
               active: true,
@@ -55,18 +67,34 @@ export default function AdminDashboard() {
               daysLeft: actualStock > 0 ? Math.ceil(actualStock / (p.velocity || 3)) : 0
             };
           });
-        setAlerts(lowStock.slice(0, 4)); // Show top 4 critical
+        setAlerts(lowStock.slice(0, 4));
       }
     } catch (err) {
       console.error("Failed to fetch alerts:", err);
     } finally {
       setLoadingAlerts(false);
     }
-  };
-
-  React.useEffect(() => {
-    fetchAlerts();
   }, []);
+
+  const fetchRecentOrders = useCallback(async () => {
+    try {
+      setLoadingOrders(true);
+      const res = await omsFetch('/api/orders');
+      const result = await res.json();
+      if (result.success) {
+        setOrders(result.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch orders:", err);
+    } finally {
+      setLoadingOrders(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAlerts();
+    fetchRecentOrders();
+  }, [fetchAlerts, fetchRecentOrders]);
 
   const triggerToast = (msg: string) => {
      setToastMessage(msg);
@@ -92,44 +120,60 @@ export default function AdminDashboard() {
      }
   };
 
-  const stats = [
-    { 
-      label: 'Total Revenue', 
-      value: '₹1,28,430.00', 
-      trend: '+12.5%', 
-      isPositive: true, 
-      icon: DollarSign,
-      color: 'bg-emerald-500',
-      shadow: 'shadow-emerald-500/20'
-    },
-    { 
-      label: 'New Orders', 
-      value: '2,845', 
-      trend: '+5.2%', 
-      isPositive: true, 
-      icon: ShoppingBag,
-      color: 'bg-indigo-600',
-      shadow: 'shadow-indigo-600/20'
-    },
-    { 
-      label: 'Avg. Order Value', 
-      value: '₹4,514', 
-      trend: '-2.4%', 
-      isPositive: false, 
-      icon: TrendingUp,
-      color: 'bg-amber-500',
-      shadow: 'shadow-amber-500/20'
-    },
-    { 
-      label: 'Product Intelligence', 
-      value: 'High Accuracy', 
-      trend: 'Predictive', 
-      isPositive: true, 
-      icon: Zap,
-      color: 'bg-rose-500',
-      shadow: 'shadow-rose-500/20'
-    },
-  ];
+  const dashboardStats = useMemo(() => {
+    const totalRev = orders.reduce((acc, o) => acc + Number(o.total_amount || 0), 0);
+    const orderCount = orders.length;
+    const avgVal = orderCount > 0 ? (totalRev / orderCount) : 0;
+
+    return [
+      { 
+        label: 'Total Revenue', 
+        value: `₹${totalRev.toLocaleString('en-IN')}`, 
+        trend: '+12.5%', 
+        isPositive: true, 
+        icon: DollarSign,
+        color: 'bg-emerald-500',
+        shadow: 'shadow-emerald-500/20'
+      },
+      { 
+        label: 'New Orders', 
+        value: orderCount.toLocaleString(), 
+        trend: '+5.2%', 
+        isPositive: true, 
+        icon: ShoppingBag,
+        color: 'bg-indigo-600',
+        shadow: 'shadow-indigo-600/20'
+      },
+      { 
+        label: 'Avg. Order Value', 
+        value: `₹${Math.round(avgVal).toLocaleString('en-IN')}`, 
+        trend: '-2.4%', 
+        isPositive: false, 
+        icon: TrendingUp,
+        color: 'bg-amber-500',
+        shadow: 'shadow-amber-500/20'
+      },
+      { 
+        label: 'Product Intelligence', 
+        value: 'High Accuracy', 
+        trend: 'Predictive', 
+        isPositive: true, 
+        icon: Zap,
+        color: 'bg-rose-500',
+        shadow: 'shadow-rose-500/20'
+      },
+    ];
+  }, [orders]);
+
+  const getTimeAgo = (dateStr: string) => {
+    const diff = new Date().getTime() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return new Date(dateStr).toLocaleDateString();
+  };
 
   return (
     <div className="space-y-10 relative">
@@ -144,7 +188,7 @@ export default function AdminDashboard() {
              </div>
              <div>
                 <p className="text-sm font-black uppercase tracking-widest leading-none">System Notification</p>
-                <p className="text-xs font-bold opacity-80 mt-1 italic font-bold">{toastMessage}</p>
+                <p className="text-xs font-bold opacity-80 mt-1 italic">{toastMessage}</p>
              </div>
           </motion.div>
         )}
@@ -158,7 +202,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">
             <Clock className="w-4 h-4" />
-            Last Sync: 2 mins ago
+            Last Sync: {loadingOrders || loadingAlerts ? 'Syncing...' : 'Live'}
           </button>
           <button 
              onClick={() => triggerToast("Generating Weekly System Report...")}
@@ -170,7 +214,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
+        {dashboardStats.map((stat) => (
           <div key={stat.label} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow group">
             <div className="flex items-center justify-between mb-4">
               <div className={`w-12 h-12 ${stat.color} rounded-xl flex items-center justify-center text-white shadow-lg ${stat.shadow} group-hover:scale-110 transition-transform`}>
@@ -214,25 +258,30 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {[
-                   { id: '#ORD-089', name: 'Alina Vance', amount: '₹2,400.00', time: '2 mins ago', status: 'Pending' },
-                   { id: '#ORD-088', name: 'Marcus Jin', amount: '₹8,550.50', time: '12 mins ago', status: 'Pending' },
-                   { id: '#ORD-087', name: 'Elena Rostova', amount: '₹3,100.25', time: '28 mins ago', status: 'Pending' },
-                   { id: '#ORD-086', name: 'David Smith', amount: '₹1,299.00', time: '1 hr ago', status: 'Pending' },
-                ].map((order) => (
-                  <tr key={order.id} className="hover:bg-slate-50/80 transition-colors group">
-                    <td className="p-4 pl-8 text-sm font-bold text-blue-600">{order.id}</td>
-                    <td className="p-4 text-sm font-medium text-slate-700">{order.name}</td>
+                {orders.slice(0, 4).map((order) => (
+                  <tr key={order.order_id} className="hover:bg-slate-50/80 transition-colors group">
+                    <td className="p-4 pl-8 text-sm font-bold text-blue-600">{order.order_id}</td>
+                    <td className="p-4 text-sm font-medium text-slate-700">{order.customer_name}</td>
                     <td className="p-4">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-bold border border-amber-200">
+                      <span className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border",
+                        order.status === 'delivered' ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                        order.status === 'pending' ? "bg-amber-50 text-amber-700 border-amber-200" :
+                        "bg-blue-50 text-blue-700 border-blue-200"
+                      )}>
                         <Clock className="w-3 h-3" />
-                        {order.status}
+                        {order.status.toUpperCase()}
                       </span>
                     </td>
-                    <td className="p-4 text-sm font-bold text-slate-900">{order.amount}</td>
-                    <td className="p-4 text-xs text-slate-400 font-medium tracking-wide">{order.time}</td>
+                    <td className="p-4 text-sm font-bold text-slate-900">₹{parseFloat(order.total_amount.toString()).toLocaleString('en-IN')}</td>
+                    <td className="p-4 text-xs text-slate-400 font-medium tracking-wide">{getTimeAgo(order.created_at)}</td>
                   </tr>
                 ))}
+                {orders.length === 0 && !loadingOrders && (
+                   <tr>
+                      <td colSpan={5} className="p-10 text-center text-slate-400 font-bold italic">No active orders found.</td>
+                   </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -250,37 +299,51 @@ export default function AdminDashboard() {
                </div>
             )}
             {alerts.length === 0 && !loadingAlerts && (
-               <p className="text-xs text-slate-400 text-center py-8 italic font-medium">All systems green. No shortages detected.</p>
+               <div className="p-8 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <Check className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Inventory Secure</p>
+               </div>
             )}
             {alerts.map((alert) => (
-              <div key={alert.id} className="flex items-center gap-4 p-4 bg-rose-50/50 border border-rose-100 rounded-2xl">
-                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-rose-200 shadow-sm relative">
-                  <ShoppingBag className="w-6 h-6 text-rose-500" />
-                  {alert.active && <div className="absolute top-[-4px] right-[-4px] w-3 h-3 bg-rose-500 rounded-full border-2 border-white" />}
+              <div 
+                key={alert.id} 
+                className={cn(
+                  "p-4 rounded-xl border transition-all flex flex-col gap-3",
+                  alert.active ? "bg-rose-50 border-rose-100" : "bg-slate-50 border-slate-200 opacity-60"
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <h4 className="font-bold text-slate-900 text-sm">{alert.item}</h4>
+                  <span className={cn(
+                    "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded",
+                    alert.active ? "bg-rose-100 text-rose-700" : "bg-slate-200 text-slate-500"
+                  )}>
+                    {alert.level}
+                  </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-900 truncate">{alert.item}</p>
-                  <p className="text-xs text-rose-600 font-bold mt-0.5">{alert.active ? alert.level : "Restocked"}</p>
-                  {alert.active && (
-                    <p className="text-[10px] text-slate-400 font-medium italic mt-1">
-                       Intelligence: ~{alert.daysLeft} days to total exhaustion (Velocity: {alert.velocity}/day)
-                    </p>
-                  )}
+                <div className="flex items-center justify-between">
+                   <div className="flex items-center gap-4">
+                      <div>
+                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Velocity</p>
+                         <p className="text-xs font-black text-slate-700">{alert.velocity} / d</p>
+                      </div>
+                      <div>
+                         <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Depletion</p>
+                         <p className="text-xs font-black text-rose-600">{alert.daysLeft} Days</p>
+                      </div>
+                   </div>
+                   {alert.active && (
+                      <button 
+                        onClick={() => handleRestock(alert.id, alert.item)}
+                        className="px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-indigo-600 transition-colors shadow-lg shadow-slate-900/10"
+                      >
+                         Restock
+                      </button>
+                   )}
                 </div>
-                <button 
-                  onClick={() => alert.active && handleRestock(alert.id, alert.item)}
-                  className={`px-3 py-1.5 text-white text-xs font-black rounded-lg shadow-lg active:scale-95 transition-all ${alert.active ? 'bg-rose-600 hover:scale-105 shadow-rose-600/20' : 'bg-emerald-500 cursor-default shadow-emerald-500/20'}`}
-                >
-                  {alert.active ? 'Restock' : <Check className="w-4 h-4" />}
-                </button>
               </div>
             ))}
           </div>
-          <Link href="/admin/inventory" className="block mt-6">
-             <button className="w-full py-3 text-slate-400 font-bold text-xs uppercase tracking-widest rounded-xl border border-slate-200 hover:bg-slate-50 transition-colors">
-               Full Inventory Report
-             </button>
-          </Link>
         </div>
       </div>
     </div>
