@@ -55,6 +55,14 @@ export async function POST(req: Request) {
   try {
     const env = getEnv(req);
     const supabase = getSupabaseClient(env);
+    
+    // Safety check for API Keys
+    const isPlaceholder = (supabase as any).supabaseKey === 'placeholder_key';
+    if (isPlaceholder) {
+      console.error(`🚨 CRITICAL: Supabase API Key is MISSING for environment: ${env}`);
+      return NextResponse.json({ success: false, error: 'Configuration Error: Invalid or Missing API Key' }, { status: 500 });
+    }
+
     const body = await req.json();
 
     // 1. Handle Category
