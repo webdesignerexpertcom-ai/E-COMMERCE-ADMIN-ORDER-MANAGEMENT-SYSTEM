@@ -7,16 +7,13 @@ import {
   Shield, 
   Globe, 
   CreditCard, 
-  Bell, 
-  Database, 
-  Webhook, 
   Truck,
-  CheckCircle2,
   Lock,
   Plus,
   RefreshCcw,
   Layout,
-  Phone
+  Phone,
+  Webhook
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -26,6 +23,7 @@ export default function SettingsPage() {
   const [storeName, setStoreName] = useState('Homemade Love');
   const [currency, setCurrency] = useState('INR (₹)');
   const [whatsappNumber, setWhatsappNumber] = useState('9492456488');
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   // Payment states
   const [razorpayKeyId, setRazorpayKeyId] = useState('rzp_test_dummykey123');
@@ -56,7 +54,7 @@ export default function SettingsPage() {
           {tabs.map((tab) => (
             <button 
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'general' | 'roles' | 'oms' | 'auth' | 'payments')}
               className={cn(
                 "flex items-center gap-3 px-5 py-4 rounded-2xl text-sm font-black transition-all border",
                 activeTab === tab.id 
