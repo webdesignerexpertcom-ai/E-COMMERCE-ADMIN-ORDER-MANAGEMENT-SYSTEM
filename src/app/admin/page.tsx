@@ -12,6 +12,7 @@ import {
   Check,
   Zap
 } from 'lucide-react';
+import { omsFetch } from '@/lib/api';
 import { DashboardCharts } from '@/components/admin/DashboardCharts';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,10 +35,7 @@ export default function AdminDashboard() {
 
   const fetchAlerts = async () => {
     try {
-      const env = localStorage.getItem('oms-environment') || 'production';
-      const res = await fetch('/api/products', {
-        headers: { 'x-environment': env }
-      });
+      const res = await omsFetch('/api/products');
       const result = await res.json();
       if (result.success) {
         const lowStock: AlertItem[] = result.data
@@ -81,11 +79,10 @@ export default function AdminDashboard() {
      setAlerts(alerts.map(a => a.id === id ? { ...a, active: false } : a));
 
      try {
-        const env = localStorage.getItem('oms-environment') || 'production';
-        await fetch('/api/products', {
+        await omsFetch('/api/products', {
            method: 'PUT',
-           headers: { 'Content-Type': 'application/json', 'x-environment': env },
-           body: JSON.stringify({ id, stock: 50 }) // Default restock to 50
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ id, stock: 50, restockStatus: 'completed' }) 
         });
         triggerToast(`Restock Successful: ${name} (+50 units).`);
         fetchAlerts();
