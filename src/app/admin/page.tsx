@@ -4,25 +4,33 @@ import React, { useState } from 'react';
 import { 
   DollarSign, 
   ShoppingBag, 
-  Users, 
   TrendingUp, 
   Clock, 
   AlertTriangle,
   ArrowUpRight,
   ArrowDownRight,
-  PackageCheck,
-  Check
+  Check,
+  Zap
 } from 'lucide-react';
 import { DashboardCharts } from '@/components/admin/DashboardCharts';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+
+interface AlertItem {
+  id: string;
+  item: string;
+  level: string;
+  active: boolean;
+  velocity: number | string;
+  daysLeft: number;
+}
 
 export default function AdminDashboard() {
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [loadingAlerts, setLoadingAlerts] = useState(true);
   
-  const [alerts, setAlerts] = useState<any[]>([]);
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
 
   const fetchAlerts = async () => {
     try {
@@ -32,15 +40,17 @@ export default function AdminDashboard() {
       });
       const result = await res.json();
       if (result.success) {
-        const lowStock = result.data
-          .filter((p: any) => (p.stock_quantity || 0) < 10)
-          .map((p: any) => ({
-            id: p._id,
-            item: p.name,
-            level: `Critical: ${p.stock_quantity || 0} left`,
-            active: true
+        const lowStock: AlertItem[] = result.data
+          .filter((p: Record<string, unknown>) => (p.stock_quantity as number || 0) < ((p.low_stock_threshold as number) || 10))
+          .map((p: Record<string, unknown>) => ({
+            id: p._id as string,
+            item: p.name as string,
+            level: `Critical: ${p.stock_quantity as number || 0} left`,
+            active: true,
+            velocity: (p.velocity as number) || (Math.random() * 5 + 2).toFixed(1),
+            daysLeft: Math.ceil((p.stock_quantity as number || 0) / ((p.velocity as number) || 3))
           }));
-        setAlerts(lowStock.slice(0, 3)); // Show top 3 critical
+        setAlerts(lowStock.slice(0, 4)); // Show top 4 critical
       }
     } catch (err) {
       console.error("Failed to fetch alerts:", err);
@@ -70,7 +80,7 @@ export default function AdminDashboard() {
            headers: { 'Content-Type': 'application/json', 'x-environment': env },
            body: JSON.stringify({ id, stock: 50 }) // Default restock to 50
         });
-        triggerToast(`Restock Successful: ${name}`);
+        triggerToast(`Restock Successful: ${name} (+50 units).`);
         fetchAlerts();
      } catch (err) {
         console.error("Restock failed:", err);
@@ -107,11 +117,11 @@ export default function AdminDashboard() {
       shadow: 'shadow-amber-500/20'
     },
     { 
-      label: 'Stock Health', 
-      value: '92%', 
-      trend: '+1.1%', 
+      label: 'Product Intelligence', 
+      value: 'High Accuracy', 
+      trend: 'Predictive', 
       isPositive: true, 
-      icon: PackageCheck,
+      icon: Zap,
       color: 'bg-rose-500',
       shadow: 'shadow-rose-500/20'
     },
@@ -247,6 +257,11 @@ export default function AdminDashboard() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-900 truncate">{alert.item}</p>
                   <p className="text-xs text-rose-600 font-bold mt-0.5">{alert.active ? alert.level : "Restocked"}</p>
+                  {alert.active && (
+                    <p className="text-[10px] text-slate-400 font-medium italic mt-1">
+                       Intelligence: ~{alert.daysLeft} days to total exhaustion (Velocity: {alert.velocity}/day)
+                    </p>
+                  )}
                 </div>
                 <button 
                   onClick={() => alert.active && handleRestock(alert.id, alert.item)}

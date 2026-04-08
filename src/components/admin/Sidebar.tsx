@@ -11,11 +11,11 @@ import {
   BarChart3, 
   Settings, 
   LogOut,
-  ChevronRight,
   Database,
   History,
   Box,
-  AlertTriangle
+  AlertTriangle,
+  Activity
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,7 @@ const sidebarItems = [
   { name: 'Stock Alerts', icon: AlertTriangle, href: '/admin/alerts' },
   { name: 'Customers', icon: Users, href: '/admin/customers' },
   { name: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
+  { name: 'Health Scan', icon: Activity, href: '/admin/health' },
   { name: 'Audit Logs', icon: History, href: '/admin/audit' },
   { name: 'Settings', icon: Settings, href: '/admin/settings' },
 ];

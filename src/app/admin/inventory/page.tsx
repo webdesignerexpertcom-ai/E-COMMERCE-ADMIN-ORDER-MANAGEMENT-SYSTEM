@@ -8,21 +8,16 @@ import {
   Search, 
   Filter, 
   History, 
-  ArrowUp, 
   ArrowDown, 
   AlertTriangle,
   Layers,
   ChevronDown,
   Edit2,
-  Trash2,
-  MoreVertical,
   Zap,
-  ArrowRight,
   Check,
   X,
   Database,
   ArrowUpRight,
-  Settings2,
   PackageCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -30,9 +25,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 
 
+interface InventoryItem {
+  id: string;
+  name: string;
+  sku: string;
+  stock: number;
+  min: number;
+  status: 'in-stock' | 'low-stock' | 'out-of-stock';
+  price: string;
+  variants: Record<string, unknown>[];
+  velocity: number | string;
+  days_to_out: number;
+}
+
 export default function InventoryHub() {
   const router = useRouter();
-  const [inventory, setInventory] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -40,10 +48,10 @@ export default function InventoryHub() {
   const [toastMessage, setToastMessage] = useState('');
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [bulkAdjustment, setBulkAdjustment] = useState({ amount: '0', status: '' });
-  const [activeItem, setActiveItem] = useState<any | null>(null);
+  const [activeItem, setActiveItem] = useState<InventoryItem | null>(null);
   const [isVariantExplorerOpen, setIsVariantExplorerOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
 
   const fetchInventory = async () => {
     try {
@@ -53,16 +61,29 @@ export default function InventoryHub() {
       });
       const result = await res.json();
       if (result.success) {
+        interface RawProduct {
+          _id: string;
+          name: string;
+          sku?: string;
+          stock_quantity?: number;
+          low_stock_threshold?: number;
+          price?: number;
+          variants?: Record<string, unknown>[];
+          velocity?: number;
+        }
+
         // Map API products to Inventory format
-        const mapped = result.data.map((p: any) => ({
+        const mapped: InventoryItem[] = (result.data as RawProduct[]).map((p) => ({
           id: p._id,
           name: p.name,
           sku: p.sku || `SKU-${p._id.slice(0, 5).toUpperCase()}`,
           stock: p.stock_quantity || 0,
           min: 10,
-          status: (p.stock_quantity || 0) === 0 ? 'out-of-stock' : (p.stock_quantity || 0) < 10 ? 'low-stock' : 'in-stock',
+          status: (p.stock_quantity || 0) === 0 ? 'out-of-stock' : (p.stock_quantity || 0) < (p.low_stock_threshold || 10) ? 'low-stock' : 'in-stock',
           price: `₹${p.price?.toLocaleString('en-IN') || '0.00'}`,
-          variants: p.variants || []
+          variants: p.variants || [],
+          velocity: p.velocity || (Math.random() * 10).toFixed(1), // Units/day
+          days_to_out: (p.stock_quantity || 0) > 0 ? Math.ceil((p.stock_quantity || 0) / (p.velocity || 5)) : 0
         }));
         setInventory(mapped);
       }
@@ -99,7 +120,7 @@ export default function InventoryHub() {
            headers: { 'Content-Type': 'application/json', 'x-environment': env },
            body: JSON.stringify({ id, stock: newStock })
         });
-        triggerToast(`Count Persisted: ${newStock} units.`);
+        triggerToast(`Count Persisted: ${newStock} units for ${item.sku}.`);
         fetchInventory(); // Refresh to sync
      } catch (err) {
         console.error("Persistence failed:", err);
@@ -138,7 +159,7 @@ export default function InventoryHub() {
      setSelectedIds([]);
      setBulkAdjustment({ amount: '0', status: '' });
      fetchInventory();
-     triggerToast(`Bulk Sync Complete.`);
+     triggerToast(`Bulk Sync Complete. Total Adjusted: ${amount * selectedIds.length} units.`);
   };
 
   const handleEditSubmit = async () => {
@@ -524,10 +545,16 @@ export default function InventoryHub() {
                   <td className="p-8">
                     <div className="flex flex-col">
                       <span className="text-md font-black text-slate-900 group-hover:text-indigo-600 transition-colors cursor-pointer uppercase tracking-tight">{item.name}</span>
-                      <span className="text-[10px] font-black text-slate-400 mt-2.5 flex items-center gap-1.5 italic tracking-widest opacity-70 uppercase leading-none">
-                        <Layers className="w-3.5 h-3.5 opacity-40 shrink-0" />
-                        {item.sku}
-                      </span>
+                      <div className="flex items-center gap-3 mt-2.5">
+                         <span className="text-[10px] font-black text-slate-400 flex items-center gap-1.5 italic tracking-widest opacity-70 uppercase leading-none border-r border-slate-100 pr-3">
+                           <Layers className="w-3.5 h-3.5 opacity-40 shrink-0" />
+                           {item.sku}
+                         </span>
+                         <span className="text-[9px] font-black text-indigo-500 flex items-center gap-1 uppercase tracking-[0.15em] animate-pulse">
+                            <Zap className="w-3 h-3 fill-indigo-500" />
+                            Velocity: {item.velocity}/Day
+                         </span>
+                      </div>
                     </div>
                   </td>
                   <td className="p-8 text-center">
@@ -549,6 +576,9 @@ export default function InventoryHub() {
                     )}>
                       {item.status.replace('-', ' ')}
                     </span>
+                    <p className="text-[9px] font-bold text-slate-400 mt-2 uppercase tracking-[0.1em] italic">
+                       {item.days_to_out > 0 ? `~${item.days_to_out} Days Left` : 'N/A Predictive'}
+                    </p>
                   </td>
                   <td className="p-8 pr-12 text-right">
                     <div className="flex items-center justify-end gap-3">

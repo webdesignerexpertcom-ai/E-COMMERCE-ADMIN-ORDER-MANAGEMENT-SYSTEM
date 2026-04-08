@@ -3,11 +3,6 @@
 import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  Package, 
-  ChevronLeft, 
-  Save, 
-  X, 
-  Plus, 
   Image as ImageIcon, 
   Tag, 
   Layers, 
@@ -15,7 +10,8 @@ import {
   Trash2,
   CheckCircle2,
   Zap,
-  DollarSign
+  DollarSign,
+  ChevronLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -65,14 +61,16 @@ export default function NewProductListing() {
     price: '',
     sku: '',
     quantity: '0',
-    status: 'draft',
+    status: 'active',
     metaTitle: '',
     metaDescription: '',
-    discountPrice: ''
+    discountPrice: '',
+    tag: 'New',
+    tagColor: 'bg-emerald-500',
+    lowStockThreshold: '10',
+    weight: ''
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [variants, setVariants] = useState<any[]>([]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
      const file = e.target.files?.[0];
@@ -124,7 +122,11 @@ export default function NewProductListing() {
           image: previewImage || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=800',
           status: productData.status,
           metaTitle: productData.metaTitle,
-          metaDescription: productData.metaDescription
+          metaDescription: productData.metaDescription,
+          tag: productData.tag,
+          tag_color: productData.tagColor,
+          low_stock_threshold: parseInt(productData.lowStockThreshold) || 10,
+          weight: productData.weight
         })
       });
       
@@ -403,21 +405,60 @@ export default function NewProductListing() {
                       <option value="Beauty">Beauty & Care</option>
                    </select>
                 </div>
-                <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 hover:border-indigo-100 transition-all">
-                   <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 opacity-70">Visibility Status</p>
-                   <select 
-                      value={productData.status}
-                      onChange={(e) => setProductData({...productData, status: e.target.value})}
-                      className="w-full bg-transparent text-sm font-black text-slate-900 outline-none cursor-pointer"
-                   >
-                      <option value="active">Live in Store</option>
-                      <option value="draft">Draft Protocol</option>
-                      <option value="hidden">Admin Only</option>
-                   </select>
-                </div>
+                 <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100">
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 opacity-70">Visibility Status</p>
+                    <select 
+                       value={productData.status}
+                       onChange={(e) => setProductData({...productData, status: e.target.value})}
+                       className="w-full bg-transparent text-sm font-black text-slate-900 outline-none cursor-pointer"
+                    >
+                       <option value="active">Live in Store</option>
+                       <option value="draft">Draft Protocol</option>
+                       <option value="hidden">Admin Only</option>
+                    </select>
+                 </div>
 
-             </div>
-          </section>
+                 <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 group">
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 opacity-70">Automated Badge Tag</p>
+                    <div className="flex items-center gap-3">
+                        <select 
+                          value={productData.tag}
+                          onChange={(e) => setProductData({...productData, tag: e.target.value})}
+                          className="flex-1 bg-transparent text-sm font-black text-slate-900 outline-none cursor-pointer"
+                        >
+                          <option value="New">New Arrival</option>
+                          <option value="Bestseller">Bestseller</option>
+                          <option value="Limited">Limited Edition</option>
+                          <option value="-10%">-10% Discount</option>
+                          <option value="-20%">-20% Discount</option>
+                          <option value="-50%">-50% Mega Deal</option>
+                        </select>
+                        <div className={cn("w-4 h-4 rounded-full", productData.tagColor)} />
+                    </div>
+                 </div>
+
+                 <div className="p-5 bg-indigo-50/50 rounded-3xl border border-indigo-100/50">
+                    <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1">Stock Detection Threshold</p>
+                    <input 
+                      type="number"
+                      value={productData.lowStockThreshold}
+                      onChange={(e) => setProductData({...productData, lowStockThreshold: e.target.value})}
+                      className="w-full bg-transparent text-sm font-black text-slate-900 outline-none"
+                    />
+                 </div>
+
+                 <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100">
+                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1 opacity-70">Logistics Weight (g)</p>
+                    <input 
+                      type="number"
+                      placeholder="e.g. 500"
+                      value={productData.weight}
+                      onChange={(e) => setProductData({...productData, weight: e.target.value})}
+                      className="w-full bg-transparent text-sm font-black text-slate-900 outline-none"
+                    />
+                 </div>
+              </div>
+           </section>
 
           {/* SEO Pro Section */}
           <section className="bg-white p-10 rounded-[48px] border border-slate-200 shadow-sm space-y-8">
