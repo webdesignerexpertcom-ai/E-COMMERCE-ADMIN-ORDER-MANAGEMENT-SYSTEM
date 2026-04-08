@@ -10,6 +10,7 @@ function extractMessage(err: unknown): string {
   return String(err);
 }
 
+// Standard production build trigger - V1.1.2
 export const dynamic = 'force-dynamic';
 
 // Sample Fallback Data
