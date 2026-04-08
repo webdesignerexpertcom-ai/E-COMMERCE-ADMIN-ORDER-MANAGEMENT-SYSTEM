@@ -16,7 +16,8 @@ import {
   Box,
   AlertTriangle,
   Activity,
-  Zap
+  Zap,
+  Cpu
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -27,6 +28,7 @@ const sidebarItems = [
   { name: 'Catalog', icon: Package, href: '/admin/catalog' },
   { name: 'Inventory Hub', icon: Box, href: '/admin/inventory' },
   { name: 'Warehouse Events', icon: Zap, href: '/admin/warehouse' },
+  { name: 'Automation', icon: Cpu, href: '/admin/automation' },
   { name: 'Stock Alerts', icon: AlertTriangle, href: '/admin/alerts' },
   { name: 'Customers', icon: Users, href: '/admin/customers' },
   { name: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
