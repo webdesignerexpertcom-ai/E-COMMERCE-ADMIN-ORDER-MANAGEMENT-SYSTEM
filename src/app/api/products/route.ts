@@ -57,10 +57,14 @@ export async function POST(req: Request) {
     const supabase = getSupabaseClient(env);
     
     // Safety check for API Keys
-    const isPlaceholder = (supabase as any).supabaseKey === 'placeholder_key';
+    const isPlaceholder = (supabase as any).supabaseKey === 'placeholder_key' || !(supabase as any).supabaseKey;
     if (isPlaceholder) {
+      const missingVar = env === 'staging' ? 'STAGING_SUPABASE_ANON_KEY' : 'SUPABASE_ANON_KEY';
       console.error(`🚨 CRITICAL: Supabase API Key is MISSING for environment: ${env}`);
-      return NextResponse.json({ success: false, error: 'Configuration Error: Invalid or Missing API Key' }, { status: 500 });
+      return NextResponse.json({ 
+        success: false, 
+        error: `Configuration Error: ${missingVar} is missing in Vercel/Environment Settings.` 
+      }, { status: 500 });
     }
 
     const body = await req.json();
