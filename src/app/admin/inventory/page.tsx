@@ -66,6 +66,7 @@ export default function InventoryHub() {
           name: string;
           sku?: string;
           stock_quantity?: number;
+          stock?: number;
           low_stock_threshold?: number;
           price?: number;
           variants?: Record<string, unknown>[];
@@ -73,18 +74,23 @@ export default function InventoryHub() {
         }
 
         // Map API products to Inventory format
-        const mapped: InventoryItem[] = (result.data as RawProduct[]).map((p) => ({
-          id: p._id,
-          name: p.name,
-          sku: p.sku || `SKU-${p._id.slice(0, 5).toUpperCase()}`,
-          stock: p.stock_quantity || 0,
-          min: 10,
-          status: (p.stock_quantity || 0) === 0 ? 'out-of-stock' : (p.stock_quantity || 0) < (p.low_stock_threshold || 10) ? 'low-stock' : 'in-stock',
-          price: `₹${p.price?.toLocaleString('en-IN') || '0.00'}`,
-          variants: p.variants || [],
-          velocity: p.velocity || (Math.random() * 10).toFixed(1), // Units/day
-          days_to_out: (p.stock_quantity || 0) > 0 ? Math.ceil((p.stock_quantity || 0) / (p.velocity || 5)) : 0
-        }));
+        const mapped: InventoryItem[] = (result.data as RawProduct[]).map((p) => {
+          const actualStock = typeof p.stock_quantity !== 'undefined' ? p.stock_quantity : (typeof p.stock !== 'undefined' ? p.stock : 0);
+          const threshold = p.low_stock_threshold || 10;
+          
+          return {
+            id: p._id,
+            name: p.name,
+            sku: p.sku || `SKU-${p._id.slice(0, 5).toUpperCase()}`,
+            stock: actualStock,
+            min: threshold,
+            status: actualStock === 0 ? 'out-of-stock' : actualStock < threshold ? 'low-stock' : 'in-stock',
+            price: `₹${p.price?.toLocaleString('en-IN') || '0.00'}`,
+            variants: p.variants || [],
+            velocity: p.velocity || (Math.random() * 10).toFixed(1), // Units/day
+            days_to_out: actualStock > 0 ? Math.ceil(actualStock / (p.velocity || 5)) : 0
+          };
+        });
         setInventory(mapped);
       }
     } catch (err) {

@@ -41,15 +41,22 @@ export default function AdminDashboard() {
       const result = await res.json();
       if (result.success) {
         const lowStock: AlertItem[] = result.data
-          .filter((p: Record<string, unknown>) => (p.stock_quantity as number || 0) < ((p.low_stock_threshold as number) || 10))
-          .map((p: Record<string, unknown>) => ({
-            id: p._id as string,
-            item: p.name as string,
-            level: `Critical: ${p.stock_quantity as number || 0} left`,
-            active: true,
-            velocity: (p.velocity as number) || (Math.random() * 5 + 2).toFixed(1),
-            daysLeft: Math.ceil((p.stock_quantity as number || 0) / ((p.velocity as number) || 3))
-          }));
+          .filter((p: Record<string, any>) => {
+            const actualStock = typeof p.stock_quantity !== 'undefined' ? p.stock_quantity : (typeof p.stock !== 'undefined' ? p.stock : 0);
+            const threshold = p.low_stock_threshold || 10;
+            return actualStock < threshold;
+          })
+          .map((p: Record<string, any>) => {
+            const actualStock = typeof p.stock_quantity !== 'undefined' ? p.stock_quantity : (typeof p.stock !== 'undefined' ? p.stock : 0);
+            return {
+              id: p._id,
+              item: p.name,
+              level: actualStock === 0 ? 'Out of Stock' : `Critical: ${actualStock} left`,
+              active: true,
+              velocity: p.velocity || (Math.random() * 5 + 2).toFixed(1),
+              daysLeft: actualStock > 0 ? Math.ceil(actualStock / (p.velocity || 3)) : 0
+            };
+          });
         setAlerts(lowStock.slice(0, 4)); // Show top 4 critical
       }
     } catch (err) {
