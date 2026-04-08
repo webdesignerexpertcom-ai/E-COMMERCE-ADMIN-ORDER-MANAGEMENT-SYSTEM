@@ -23,7 +23,9 @@ import {
   ShoppingCart,
   UserPlus,
   Zap,
-  Check
+  Check,
+  MapPin,
+  Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,6 +46,8 @@ interface Order {
   id: string;
   customer: string;
   phone: string;
+  email?: string;
+  address?: string;
   status: string;
   total: string;
   date: string;
@@ -61,6 +65,8 @@ export default function OrderManagement() {
   const [newOrder, setNewOrder] = useState({
     customer: '',
     phone: '',
+    email: '',
+    address: '',
     items: 1,
     total: '',
     status: 'pending'
@@ -71,10 +77,22 @@ export default function OrderManagement() {
       const res = await omsFetch('/api/orders');
       const data = await res.json();
       if (data.success) {
-        const mapped = data.data.map((o: { order_id: string, customer_name: string, customer_phone: string, status: string, total_amount: string, created_at: string, items_count: number }): Order => ({
+        const mapped = data.data.map((o: { 
+          order_id: string; 
+          customer_name: string; 
+          customer_phone: string; 
+          customer_email?: string; 
+          shipping_address?: any; 
+          status: string; 
+          total_amount: string; 
+          created_at: string; 
+          items_count: number 
+        }): Order => ({
           id: o.order_id,
           customer: o.customer_name,
           phone: o.customer_phone,
+          email: o.customer_email || 'n/a',
+          address: typeof o.shipping_address === 'string' ? o.shipping_address : (o.shipping_address?.address || o.shipping_address?.street || 'Manual Entry'),
           status: o.status,
           total: `₹${parseFloat(o.total_amount).toLocaleString('en-IN')}`,
           date: new Date(o.created_at).toLocaleString(),
@@ -112,6 +130,7 @@ export default function OrderManagement() {
         body: JSON.stringify({
           customerName: newOrder.customer,
           customerPhone: newOrder.phone,
+          shippingAddress: { address: newOrder.address },
           totalAmount: parseFloat(newOrder.total),
           itemsCount: newOrder.items
         })
@@ -120,7 +139,7 @@ export default function OrderManagement() {
       if (data.success) {
         fetchOrders();
         setIsModalOpen(false);
-        setNewOrder({ customer: '', phone: '', items: 1, total: '', status: 'pending' });
+        setNewOrder({ customer: '', phone: '', email: '', address: '', items: 1, total: '', status: 'pending' });
         triggerSuccess();
       }
     } catch (err) { console.error(err); }
@@ -251,9 +270,16 @@ export default function OrderManagement() {
                         <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1 text-bold">WhatsApp / Phone</label>
                         <div className="relative group">
                            <Phone className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                           <input type="text" value={newOrder.phone} onChange={(e) => setNewOrder({...newOrder, phone: e.target.value})} placeholder="+1 234 567 890" className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none" />
+                           <input type="text" value={newOrder.phone} onChange={(e) => setNewOrder({...newOrder, phone: e.target.value})} placeholder="+91 00000 00000" className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none" />
                         </div>
                      </div>
+                  </div>
+                  <div className="space-y-2">
+                        <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1 text-bold">Full Delivery Address</label>
+                        <div className="relative group">
+                           <MapPin className="w-4 h-4 absolute left-4 top-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                           <textarea value={newOrder.address} onChange={(e) => setNewOrder({...newOrder, address: e.target.value})} placeholder="House, Street, Area, Pincode" className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none min-h-[80px]" />
+                        </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                      <div className="space-y-2 text-bold"><label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Total Bill (₹)</label><input type="number" value={newOrder.total} onChange={(e) => setNewOrder({...newOrder, total: e.target.value})} placeholder="0.00" className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none" /></div>
@@ -307,6 +333,7 @@ export default function OrderManagement() {
               <tr className="border-b border-slate-100 bg-slate-50/50">
                 <th className="p-6 pl-12 text-[10px] font-black text-slate-400 uppercase tracking-widest">Order Details</th>
                 <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Customer info</th>
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Shipping Address</th>
                 <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Fulfillment Status</th>
                 <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Qty</th>
                 <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Grand Total</th>
