@@ -36,7 +36,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <div className="w-64 h-screen bg-slate-900 text-slate-100 flex flex-col border-r border-slate-800 fixed left-0 top-0">
+    <div className="w-64 h-screen bg-slate-900 text-slate-100 flex flex-col border-r border-slate-800">
       <div className="p-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">

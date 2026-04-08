@@ -109,7 +109,7 @@ export default function AdminLayout({
       </AnimatePresence>
 
       <div className={cn(
-        "fixed inset-y-0 left-0 z-[60] transform lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out",
+        "fixed inset-y-0 left-0 z-[60] transform lg:relative lg:translate-x-0 lg:w-64 flex-shrink-0 transition-transform duration-300 ease-in-out",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <Sidebar onClose={() => setIsSidebarOpen(false)} />
