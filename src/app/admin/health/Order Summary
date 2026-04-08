@@ -1,0 +1,89 @@
+Design a modern, interactive Order Summary section for the landing page that allows users to:
+
+- View products added to cart
+- Adjust product quantities directly
+- See real-time price updates
+- Apply promo codes or discounts
+- Quickly proceed to checkout
+
+All functionality should feel seamless and frictionless.
+
+---
+
+## 🎯 CORE OBJECTIVE
+
+- Reduce friction by letting users edit quantities **without leaving the page**
+- Increase engagement and conversion
+- Provide real-time visual feedback on totals
+
+---
+
+## 🧩 LAYOUT STRUCTURE
+
+### Desktop
+
+- Sidebar or floating panel for order summary
+- List all products with:
+  - Product Image + Name
+  - SKU / Variant info
+  - Quantity selector (− / + buttons)
+  - Price per item
+  - Total per product
+
+- Subtotal, discounts, tax, and grand total at bottom
+- “Proceed to Checkout” button (primary CTA)
+
+### Mobile
+
+- Expandable accordion for each product
+- Sticky bottom bar for total + “Checkout” button
+- Large touch-friendly quantity buttons
+
+---
+
+## ⚡ INTERACTIVITY & UX
+
+- **Quantity selector:** ± buttons with instant total update
+- **Real-time subtotal update** as quantities change
+- **Error prevention:** Limit max/min quantity per product
+- **Remove item** button visible on hover / swipe
+- Show **stock availability warnings** if quantity exceeds stock
+
+---
+
+## 🎨 DESIGN PRINCIPLES
+
+- Clean, minimal layout
+- Strong hierarchy: Product > Quantity > Price
+- Color-coded pricing: Discounts in green, stock warnings in red
+- Smooth micro-interactions for button taps / updates
+
+---
+
+## 🔄 REAL-TIME CALCULATION
+
+- Total = Sum(product price × quantity)
+- Apply promo codes instantly
+- Show tax and shipping updates dynamically
+
+---
+
+## 🚀 ADVANCED FEATURES
+
+- Inline variant selection (size/color) for products
+- Suggested add-ons or cross-sell below product
+- Visual feedback for quantity changes (animation, subtle bounce)
+- Save cart for later / auto-sync with user account
+
+---
+
+## 🎯 FINAL GOAL
+
+Create an **intuitive, conversion-focused landing page widget** that lets users:
+
+- Adjust product quantities
+- See live pricing updates
+- Add/remove items instantly
+- Proceed to checkout with minimal clicks
+
+It should feel **like a mini-cart embedded on the page** with full functionality.

@@ -77,18 +77,34 @@ export default function ProEcoStorefront() {
 
 
   const addToCart = (product: any) => {
-    setCart([...cart, product]);
+    setCart(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => 
+          item.id === product.id ? { ...item, quantity: (item.quantity || 1) + 1 } : item
+        );
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
     setIsCartOpen(true);
   };
 
-
-  const removeFromCart = (index: number) => {
-    const newCart = [...cart];
-    newCart.splice(index, 1);
-    setCart(newCart);
+  const updateQuantity = (id: string, delta: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        const newQty = (item.quantity || 1) + delta;
+        return newQty > 0 ? { ...item, quantity: newQty } : item;
+      }
+      return item;
+    }));
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + item.price, 0);
+  const removeFromCart = (id: string) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  };
+
+  const cartTotal = cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+  const totalItems = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
   const handleWhatsAppCheckout = () => {
     if (cart.length === 0) return;
@@ -124,8 +140,8 @@ export default function ProEcoStorefront() {
                         <ShoppingBag className="w-5 h-5" />
                      </div>
                      <div>
-                       <h3 className="text-2xl font-black text-slate-900 tracking-tight">Your Cart</h3>
-                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{cart.length} Items Selected</p>
+                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Order Summary</h3>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">{totalItems} Items Total</p>
                      </div>
                   </div>
                   <button onClick={() => setIsCartOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors active:scale-95 group">
@@ -142,13 +158,34 @@ export default function ProEcoStorefront() {
                     </div>
                   ) : (
                      cart.map((item, i) => (
-                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={i} className="flex gap-4 p-4 bg-white/60 border border-white rounded-[24px] items-center relative group shadow-sm hover:shadow-md transition-shadow">
-                          <img src={item.image} alt={item.name} className="w-20 h-20 object-cover rounded-[16px] shadow-sm border border-slate-100" />
-                          <div className="flex-1">
-                             <h4 className="font-bold text-slate-900 text-sm leading-tight mb-1">{item.name}</h4>
-                             <p className="text-emerald-600 font-black text-lg">₹{item.price.toFixed(2)}</p>
+                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} key={item.id} className="flex gap-4 p-5 bg-white border border-slate-100 rounded-[28px] items-center relative group shadow-sm hover:shadow-md transition-all">
+                          <div className="w-20 h-20 rounded-[18px] overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0">
+                            <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                           </div>
-                          <button onClick={() => removeFromCart(i)} className="p-3 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white rounded-[14px] opacity-0 group-hover:opacity-100 transition-all shadow-sm active:scale-95">
+                          <div className="flex-1 min-w-0">
+                             <h4 className="font-bold text-slate-900 text-sm truncate uppercase tracking-tight">{item.name}</h4>
+                             <p className="text-emerald-600 font-black text-lg mt-0.5">₹{(item.price * (item.quantity || 1)).toFixed(2)}</p>
+                             
+                             <div className="flex items-center gap-3 mt-3">
+                                <div className="flex items-center bg-slate-50 border border-slate-100 rounded-full p-1 shadow-inner">
+                                   <button 
+                                     onClick={() => updateQuantity(item.id, -1)}
+                                     className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-white hover:text-slate-900 transition-all font-black text-lg active:scale-95"
+                                   >
+                                     −
+                                   </button>
+                                   <span className="w-8 text-center text-xs font-black text-slate-900">{(item.quantity || 1)}</span>
+                                   <button 
+                                     onClick={() => updateQuantity(item.id, 1)}
+                                     className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-white hover:text-slate-900 transition-all font-black text-lg active:scale-95"
+                                   >
+                                     +
+                                   </button>
+                                </div>
+                                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Qty</span>
+                             </div>
+                          </div>
+                          <button onClick={() => removeFromCart(item.id)} className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all group-hover:opacity-100 opacity-0 active:scale-95">
                              <Trash2 className="w-4 h-4" />
                           </button>
                        </motion.div>
@@ -229,9 +266,9 @@ export default function ProEcoStorefront() {
             <button onClick={() => setIsCartOpen(true)} className="relative p-3.5 bg-white rounded-full border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all text-slate-600 hover:shadow-lg hover:shadow-emerald-500/10 active:scale-95 group">
                <ShoppingBag className="w-4 h-4 group-hover:text-emerald-700" />
                <AnimatePresence>
-                 {cart.length > 0 && (
+                 {totalItems > 0 && (
                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-[10px] font-black flex items-center justify-center rounded-full shadow-sm border-2 border-white">
-                      {cart.length}
+                      {totalItems}
                    </motion.span>
                  )}
                </AnimatePresence>
