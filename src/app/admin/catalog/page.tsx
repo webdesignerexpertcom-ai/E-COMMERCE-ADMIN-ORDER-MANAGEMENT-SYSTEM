@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import { omsFetch } from '@/lib/api';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const initialProducts: any[] = [];
@@ -36,7 +37,7 @@ export default function CatalogPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProducts = () => {
-    fetch('/api/products', { cache: 'no-store' })
+    omsFetch('/api/products', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         if (data.success && data.data.length > 0) {
@@ -86,7 +87,7 @@ export default function CatalogPage() {
      if(!confirm(`Are you sure you want to completely remove ${name} from the catalog?`)) return;
      
      try {
-        const res = await fetch(`/api/products?id=${id}`, { method: 'DELETE' });
+        const res = await omsFetch(`/api/products?id=${id}`, { method: 'DELETE' });
         const data = await res.json();
         if(data.success) {
            triggerToast(`Asset ${name} destroyed.`);

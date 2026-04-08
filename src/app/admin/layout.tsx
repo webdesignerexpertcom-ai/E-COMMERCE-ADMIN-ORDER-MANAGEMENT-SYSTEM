@@ -23,6 +23,18 @@ export default function AdminLayout({
   const [environment, setEnvironment] = useState<'production' | 'staging'>('production');
 
   useEffect(() => {
+    const savedEnv = localStorage.getItem('oms_environment') as 'production' | 'staging';
+    if (savedEnv) setEnvironment(savedEnv);
+  }, []);
+
+  const handleEnvChange = (env: 'production' | 'staging') => {
+    setEnvironment(env);
+    localStorage.setItem('oms_environment', env);
+    // Reload to ensure all components refetch with the new environment header
+    window.location.reload();
+  };
+
+  useEffect(() => {
     const checkAuth = async () => {
       // 1. Check for Demo Auth Bypass first
       if (localStorage.getItem('oms_auth_demo') === 'true') {
@@ -104,6 +116,13 @@ export default function AdminLayout({
       </div>
 
       <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+        {environment === 'staging' && (
+          <div className="bg-amber-500 text-white text-[10px] font-black uppercase tracking-[0.2em] py-1 text-center sticky top-0 z-[50] flex items-center justify-center gap-2">
+            <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+            Staging Mode: Changes will not affect Live Site
+            <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+          </div>
+        )}
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
           <div className="flex items-center gap-4 group">
             <button 
@@ -129,7 +148,7 @@ export default function AdminLayout({
           <div className="flex items-center gap-6">
             <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
               <button 
-                onClick={() => setEnvironment('production')}
+                onClick={() => handleEnvChange('production')}
                 className={cn(
                   "px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
                   environment === 'production' ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"
@@ -138,7 +157,7 @@ export default function AdminLayout({
                 Production
               </button>
               <button 
-                onClick={() => setEnvironment('staging')}
+                onClick={() => handleEnvChange('staging')}
                 className={cn(
                   "px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
                   environment === 'staging' ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"

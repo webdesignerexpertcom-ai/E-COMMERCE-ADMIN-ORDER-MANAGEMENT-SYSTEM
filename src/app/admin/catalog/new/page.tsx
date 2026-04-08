@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { VariantEditor } from '@/components/admin/VariantEditor';
 import confetti from 'canvas-confetti';
+import { omsFetch } from '@/lib/api';
 
 export default function NewProductListing() {
   const router = useRouter();
@@ -107,7 +108,7 @@ export default function NewProductListing() {
     }
     
     try {
-      const res = await fetch('/api/products', {
+      const res = await omsFetch('/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
