@@ -124,10 +124,13 @@ export default function EditProductListing() {
           router.push('/admin/catalog');
         }, 2000);
       } else {
-        alert("Update Failed: " + data.error);
+        const errMsg = typeof data.error === 'string' ? data.error : (data.error?.message || JSON.stringify(data.error));
+        alert("General Presence Update Failed: " + errMsg);
       }
     } catch(err) {
-      console.error("API call failed", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error("API call failed", errMsg);
+      alert("Network Error: " + errMsg);
     }
   };
 

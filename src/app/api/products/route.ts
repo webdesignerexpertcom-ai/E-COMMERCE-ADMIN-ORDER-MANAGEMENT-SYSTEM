@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase';
 
+// Helper: safely extract a string message from any thrown value (including Supabase error objects)
+function extractMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'object' && err !== null && 'message' in err) {
+    return String((err as Record<string, unknown>).message);
+  }
+  return String(err);
+}
+
 export const dynamic = 'force-dynamic';
 
 // Sample Fallback Data
@@ -43,7 +52,7 @@ export async function GET(req: Request) {
     
     return NextResponse.json({ success: true, data: displayProducts, environment: env });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     console.error("GET Products Error:", message);
     return NextResponse.json({ success: true, isDemo: true, data: DUMMY_PRODUCTS });
   }
@@ -122,7 +131,7 @@ export async function POST(req: Request) {
     
     return NextResponse.json({ success: true, data: product, environment: env }, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const message = extractMessage(error);
     console.error("POST Product Error:", message);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
@@ -139,11 +148,17 @@ export async function PUT(req: Request) {
       return NextResponse.json({ success: false, error: 'Product ID is required' }, { status: 400 });
     }
 
-    const mappedUpdates: Record<string, any> = { ...updates };
+    const mappedUpdates: Record<string, unknown> = { ...updates };
+    // Map camelCase client fields -> snake_case Supabase columns
     if (updates.oldPrice !== undefined) { mappedUpdates.discount_price = updates.oldPrice; delete mappedUpdates.oldPrice; }
     if (updates.stock !== undefined) { mappedUpdates.stock_quantity = updates.stock; delete mappedUpdates.stock; }
     if (updates.image !== undefined) { mappedUpdates.images = [updates.image]; delete mappedUpdates.image; }
     if (updates.desc !== undefined) { mappedUpdates.description = updates.desc; delete mappedUpdates.desc; }
+    if (updates.metaTitle !== undefined) { mappedUpdates.meta_title = updates.metaTitle; delete mappedUpdates.metaTitle; }
+    if (updates.metaDescription !== undefined) { mappedUpdates.meta_description = updates.metaDescription; delete mappedUpdates.metaDescription; }
+    if (updates.tagColor !== undefined) { mappedUpdates.tag_color = updates.tagColor; delete mappedUpdates.tagColor; }
+    if (updates.discountPrice !== undefined) { mappedUpdates.discount_price = updates.discountPrice; delete mappedUpdates.discountPrice; }
+    if (updates.lowStockThreshold !== undefined) { mappedUpdates.low_stock_threshold = updates.lowStockThreshold; delete mappedUpdates.lowStockThreshold; }
 
     const { data: product, error } = await supabase
       .from('products')
@@ -182,7 +197,7 @@ export async function PUT(req: Request) {
     
     return NextResponse.json({ success: true, data: product, environment: env });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = extractMessage(err);
     console.error('PUT Error:', message);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
@@ -208,7 +223,7 @@ export async function DELETE(req: Request) {
     
     return NextResponse.json({ success: true, message: 'Deleted successfully', environment: env });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = extractMessage(err);
     console.error('DELETE Error:', message);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }

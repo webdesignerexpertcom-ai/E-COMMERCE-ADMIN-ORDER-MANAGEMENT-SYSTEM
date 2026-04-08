@@ -190,10 +190,14 @@ export default function InventoryHub() {
         triggerToast("SKU Identity Updated.");
         setIsEditModalOpen(false);
         fetchInventory();
+      } else {
+        const errMsg = typeof result.error === 'string' ? result.error : (result.error?.message || JSON.stringify(result.error));
+        triggerToast("Update Failed: " + errMsg);
       }
     } catch (err) {
-       console.error("Update failed:", err);
-       triggerToast("Failed to sync identity updates.");
+       const errMsg = err instanceof Error ? err.message : String(err);
+       console.error("Update failed:", errMsg);
+       triggerToast("Failed to sync identity updates: " + errMsg);
     } finally {
        setLoading(false);
     }
