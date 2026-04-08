@@ -42,6 +42,8 @@ export default function InventoryHub() {
   const [bulkAdjustment, setBulkAdjustment] = useState({ amount: '0', status: '' });
   const [activeItem, setActiveItem] = useState<any | null>(null);
   const [isVariantExplorerOpen, setIsVariantExplorerOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
 
   const fetchInventory = async () => {
     try {
@@ -137,6 +139,34 @@ export default function InventoryHub() {
      setBulkAdjustment({ amount: '0', status: '' });
      fetchInventory();
      triggerToast(`Bulk Sync Complete.`);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!editingItem) return;
+    try {
+      setLoading(true);
+      const env = localStorage.getItem('oms-environment') || 'production';
+      const res = await fetch('/api/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-environment': env },
+        body: JSON.stringify({ 
+           id: editingItem.id, 
+           name: editingItem.name,
+           sku: editingItem.sku
+        })
+      });
+      const result = await res.json();
+      if (result.success) {
+        triggerToast("SKU Identity Updated.");
+        setIsEditModalOpen(false);
+        fetchInventory();
+      }
+    } catch (err) {
+       console.error("Update failed:", err);
+       triggerToast("Failed to sync identity updates.");
+    } finally {
+       setLoading(false);
+    }
   };
 
   const filteredInventory = inventory.filter(p => 
@@ -317,6 +347,54 @@ export default function InventoryHub() {
          )}
       </AnimatePresence>
 
+       {/* Quick Identity Edit Modal */}
+       <AnimatePresence>
+          {isEditModalOpen && editingItem && (
+             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-xl bg-slate-900/60">
+                <motion.div 
+                   initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }}
+                   className="bg-white rounded-[48px] shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden"
+                >
+                   <div className="bg-slate-900 p-8 text-white flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                         <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white">
+                            <Edit2 className="w-6 h-6" />
+                         </div>
+                         <h2 className="text-2xl font-black tracking-tight">Identity Matrix</h2>
+                      </div>
+                      <button onClick={() => setIsEditModalOpen(false)} className="p-3 hover:bg-white/10 rounded-xl transition-colors"><X className="w-6 h-6" /></button>
+                   </div>
+                   <div className="p-10 space-y-8">
+                      <div className="space-y-2">
+                         <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Public Name</label>
+                         <input 
+                            type="text" 
+                            value={editingItem.name}
+                            onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
+                            className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-[28px] text-sm font-black focus:bg-white focus:border-amber-500 transition-all outline-none"
+                         />
+                      </div>
+                      <div className="space-y-2">
+                         <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Stock Keeping Unit (SKU)</label>
+                         <input 
+                            type="text" 
+                            value={editingItem.sku}
+                            onChange={(e) => setEditingItem({...editingItem, sku: e.target.value})}
+                            className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-[28px] text-sm font-black focus:bg-white focus:border-amber-500 transition-all outline-none"
+                         />
+                      </div>
+                      <button 
+                         onClick={handleEditSubmit}
+                         className="w-full py-5 bg-slate-900 text-white rounded-[32px] text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-slate-800 transition-all active:scale-95 flex items-center justify-center gap-3"
+                      >
+                         Override SKU Details <ArrowUpRight className="w-4 h-4" />
+                      </button>
+                   </div>
+                </motion.div>
+             </div>
+          )}
+       </AnimatePresence>
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-tight">Inventory Hub</h1>
@@ -491,7 +569,10 @@ export default function InventoryHub() {
                           <ArrowDown className="w-5 h-5" />
                         </button>
                       </div>
-                      <button className="p-4 text-slate-400 hover:text-indigo-600 bg-white rounded-[20px] transition-all border border-slate-100 shadow-sm">
+                      <button 
+                        onClick={() => { setEditingItem(item); setIsEditModalOpen(true); }}
+                        className="p-4 text-slate-400 hover:text-indigo-600 bg-white rounded-[20px] transition-all border border-slate-100 shadow-sm"
+                      >
                         <Edit2 className="w-6 h-6" />
                       </button>
                     </div>
