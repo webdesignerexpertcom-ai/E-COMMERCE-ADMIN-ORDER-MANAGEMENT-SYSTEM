@@ -30,7 +30,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const initialInventory = [
   { 
-    id: '1', name: 'XL Blue Shirt', sku: 'SHIRT-BLU-XL', stock: 2, min: 15, status: 'low-stock', price: '$24.00', 
+    id: '1', name: 'XL Blue Shirt', sku: 'SHIRT-BLU-XL', stock: 2, min: 15, status: 'low-stock', price: '₹2,400.00', 
     variants: [
       { id: 'v1', size: 'XL', color: 'Blue', stock: 2, sku: 'SHIRT-BLU-XL' },
       { id: 'v2', size: 'L', color: 'Blue', stock: 15, sku: 'SHIRT-BLU-L' },
@@ -38,18 +38,18 @@ const initialInventory = [
     ]
   },
   { 
-    id: '2', name: 'Ceramic Mug Blue', sku: 'MUG-CER-BLU', stock: 12, min: 25, status: 'low-stock', price: '$15.00', 
+    id: '2', name: 'Ceramic Mug Blue', sku: 'MUG-CER-BLU', stock: 12, min: 25, status: 'low-stock', price: '₹1,500.00', 
     variants: [] 
   },
   { 
-    id: '3', name: 'Milk Frother Pro', sku: 'FRT-PRO-001', stock: 0, min: 10, status: 'out-of-stock', price: '$45.00', 
+    id: '3', name: 'Milk Frother Pro', sku: 'FRT-PRO-001', stock: 0, min: 10, status: 'out-of-stock', price: '₹4,500.00', 
     variants: [
       { id: 'v4', model: 'Pro Black', stock: 0, sku: 'FRT-PRO-BLK' },
       { id: 'v5', model: 'Pro Silver', stock: 5, sku: 'FRT-PRO-SLV' },
     ] 
   },
   { 
-    id: '4', name: 'Linen Apron Grey', sku: 'APR-LIN-GRY', stock: 85, min: 15, status: 'in-stock', price: '$35.00', 
+    id: '4', name: 'Linen Apron Grey', sku: 'APR-LIN-GRY', stock: 85, min: 15, status: 'in-stock', price: '₹3,500.00', 
     variants: [
       { id: 'v6', size: 'Standard', color: 'Grey', stock: 85, sku: 'APR-LIN-GRY' },
     ] 
@@ -301,7 +301,7 @@ export default function InventoryHub() {
         </div>
         <div className="flex items-center gap-4">
           <button 
-            onClick={() => alert("Loading Audit Logs...")}
+            onClick={() => router.push('/admin/audit')}
             className="flex items-center gap-3 px-6 py-3.5 bg-white border border-slate-200 rounded-[20px] text-sm font-black text-slate-600 hover:bg-slate-50 transition-all shadow-sm active:scale-95"
           >
             <History className="w-5 h-5 text-slate-400" />
@@ -337,7 +337,7 @@ export default function InventoryHub() {
             <Zap className="w-5 h-5" />
             <span className="text-[10px] uppercase tracking-widest">Inventory Asset Value</span>
           </div>
-          <h2 className="text-4xl font-black text-white tracking-tight leading-none">$84,200.50</h2>
+          <h2 className="text-4xl font-black text-white tracking-tight leading-none">₹84,20,000.50</h2>
         </div>
       </div>
 

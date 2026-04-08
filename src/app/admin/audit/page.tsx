@@ -17,7 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 
 const auditLogs = [
-  { id: '1', admin: 'Sarah Williams', action: 'Update Price', entity: 'Product', target: 'Espresso Roast', time: '2 mins ago', details: 'Changed price from $22.00 to $24.00', status: 'success' },
+  { id: '1', admin: 'Sarah Williams', action: 'Update Price', entity: 'Product', target: 'Espresso Roast', time: '2 mins ago', details: 'Changed price from ₹2,200.00 to ₹2,400.00', status: 'success' },
   { id: '2', admin: 'Marcus James', action: 'Restock', entity: 'Inventory', target: 'Ceramic Mug', time: '15 mins ago', details: 'Added 50 units', status: 'success' },
   { id: '3', admin: 'System Trigger', action: 'Auto-Segment', entity: 'Customer', target: 'Emily Davis', time: '1 hour ago', details: 'Moved to VIP segment via CLV trigger', status: 'info' },
   { id: '4', admin: 'Sarah Williams', action: 'Delete Variant', entity: 'Catalog', target: 'Blue Mug / S', time: '3 hours ago', details: 'Soft deleted variant for seasonality', status: 'warning' },

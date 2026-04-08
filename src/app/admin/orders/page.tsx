@@ -32,11 +32,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 
 const initialOrders = [
-  { id: 'ORD-84920', customer: 'Liam Neeson', phone: '+1234567890', status: 'delivered', total: '$1,240.00', date: '2026-04-04 14:20 PM', items: 3 },
-  { id: 'ORD-84921', customer: 'John Wick', phone: '+1234567891', status: 'processing', total: '$850.50', date: '2026-04-04 13:45 PM', items: 1 },
-  { id: 'ORD-84922', customer: 'Bruce Wayne', phone: '+1234567892', status: 'pending', total: '$3,400.00', date: '2026-04-04 11:10 AM', items: 5 },
-  { id: 'ORD-84923', customer: 'Diana Prince', phone: '+1234567893', status: 'shipped', total: '$210.30', date: '2026-04-03 16:30 PM', items: 2 },
-  { id: 'ORD-84924', customer: 'Clark Kent', phone: '+1234567894', status: 'partially_fulfilled', total: '$450.00', date: '2026-04-03 15:20 PM', items: 4 },
+  { id: 'ORD-84920', customer: 'Liam Neeson', phone: '9492456488', status: 'delivered', total: '₹1,24,000.00', date: '2026-04-04 14:20 PM', items: 3 },
+  { id: 'ORD-84921', customer: 'John Wick', phone: '9492456488', status: 'processing', total: '₹85,050.50', date: '2026-04-04 13:45 PM', items: 1 },
+  { id: 'ORD-84922', customer: 'Bruce Wayne', phone: '9492456488', status: 'pending', total: '₹3,40,000.00', date: '2026-04-04 11:10 AM', items: 5 },
+  { id: 'ORD-84923', customer: 'Diana Prince', phone: '9492456488', status: 'shipped', total: '₹21,030.00', date: '2026-04-03 16:30 PM', items: 2 },
+  { id: 'ORD-84924', customer: 'Clark Kent', phone: '9492456488', status: 'partially_fulfilled', total: '₹45,000.00', date: '2026-04-03 15:20 PM', items: 4 },
 ];
 
 const statusStyles: Record<string, { label: string, icon: any, color: string, border: string, bg: string }> = {
@@ -85,7 +85,7 @@ export default function OrderManagement() {
     if (!newOrder.customer) return;
     const orderId = `ORD-${Math.floor(Math.random() * 90000) + 10000}`;
     const date = new Date().toLocaleString();
-    setOrders([{ id: orderId, ...newOrder, date, total: `$${parseFloat(newOrder.total).toFixed(2)}` }, ...orders]);
+    setOrders([{ id: orderId, ...newOrder, date, total: `₹${parseFloat(newOrder.total).toLocaleString('en-IN')}` }, ...orders]);
     setIsModalOpen(false);
     setNewOrder({ customer: '', phone: '', items: 1, total: '', status: 'pending' });
     triggerSuccess();
@@ -108,7 +108,7 @@ export default function OrderManagement() {
       o.customer, 
       o.phone.replace(',', ' '), // Avoid comma conflicts in CSV
       o.status.toUpperCase(), 
-      o.total.replace('$', '').replace(',', ''), 
+      o.total.replace(/[₹$,]/g, ''), 
       o.date.replace(',', ' '), 
       o.items
     ]);
@@ -247,7 +247,7 @@ export default function OrderManagement() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                      <div className="space-y-2 text-bold">
-                        <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Total Bill ($)</label>
+                        <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Total Bill (₹)</label>
                         <input 
                            type="number" 
                            value={newOrder.total}
@@ -408,13 +408,24 @@ export default function OrderManagement() {
                     </td>
                     <td className="p-6 pr-12 text-right">
                       <div className="flex items-center justify-end gap-2 transition-all">
-                        <button className="p-3 text-slate-400 hover:text-indigo-600 bg-white rounded-[16px] border border-slate-100 shadow-sm transition-all" title="View Details">
+                        <button 
+                          onClick={() => alert(`Visualizing Order Canvas: ${order.id}`)}
+                          className="p-3 text-slate-400 hover:text-indigo-600 bg-white rounded-[16px] border border-slate-100 shadow-sm transition-all" 
+                          title="View Details"
+                        >
                           <Eye className="w-5 h-5" />
                         </button>
-                         <button className="p-3 text-slate-400 hover:text-emerald-600 bg-white rounded-[16px] border border-slate-100 shadow-sm transition-all" title="WhatsApp Chat" onClick={() => openWhatsApp(order.id, order.phone)}>
+                         <button 
+                           className="p-3 text-slate-400 hover:text-emerald-600 bg-white rounded-[16px] border border-slate-100 shadow-sm transition-all" 
+                           title="WhatsApp Chat" 
+                           onClick={() => openWhatsApp(order.id, order.phone)}
+                         >
                           <MessageSquare className="w-5 h-5" />
                         </button>
-                        <button className="p-3 text-slate-400 hover:text-slate-900 bg-white rounded-[16px] border border-slate-100 shadow-sm transition-all">
+                        <button 
+                          onClick={() => alert("Enterprise Exporting & Archiving logic triggered.")}
+                          className="p-3 text-slate-400 hover:text-slate-900 bg-white rounded-[16px] border border-slate-100 shadow-sm transition-all"
+                        >
                           <MoreVertical className="w-5 h-5" />
                         </button>
                       </div>
