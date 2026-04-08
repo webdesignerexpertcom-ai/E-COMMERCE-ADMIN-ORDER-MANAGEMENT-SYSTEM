@@ -2,35 +2,42 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingBag, 
-  ArrowRight, 
-  ShieldCheck, 
-  Search, 
-  Leaf, 
-  Truck, 
-  Shield, 
   Menu, 
   X, 
-  Star, 
   MessageCircle, 
   Trash2, 
-  Plus,
-  Award,
-  MapPin
+  Plus
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+
+interface Product {
+  id: string;
+  name: string;
+  telugu_name?: string;
+  description?: string;
+  price: number;
+  image: string;
+  category?: string;
+  variants?: { size: string; price: number }[];
+  benefits?: string[];
+}
+
+interface CartItem extends Product {
+  quantity: number;
+  size?: string;
+}
 
 export default function ProEcoStorefront() {
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [cart, setCart] = useState<any[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
   
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
@@ -41,10 +48,10 @@ export default function ProEcoStorefront() {
       const res = await fetch('/api/products', { cache: 'no-store' });
       const data = await res.json();
       if (data.success) {
-        const mapped = data.data.map((p: any) => ({
+        const mapped: Product[] = data.data.map((p: { _id?: string; id?: string }) => ({
           ...p,
           id: p._id || p.id
-        }));
+        } as Product));
         setProducts(mapped);
       }
     } catch (err) {
@@ -60,7 +67,8 @@ export default function ProEcoStorefront() {
     if (savedCart) {
       try {
         setCart(JSON.parse(savedCart));
-      } catch (e) {
+      } catch (err) {
+        console.error("Cart error:", err);
         setCart([]);
       }
     }
@@ -77,7 +85,7 @@ export default function ProEcoStorefront() {
     }
   }, [cart]);
 
-  const addToCart = (product: any) => {
+  const addToCart = (product: CartItem) => {
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id && (item.size === product.size || (!item.size && !product.size)));
       if (existing) {
@@ -207,7 +215,7 @@ export default function ProEcoStorefront() {
                          <p className="font-black uppercase tracking-widest text-xs text-[#4A2617]">Your basket is empty</p>
                       </div>
                    ) : (
-                      cart.map((item, i) => (
+                      cart.map((item) => (
                         <div key={`${item.id}-${item.size}`} className="flex gap-4 p-4 border border-slate-100 rounded-2xl items-center group shadow-sm hover:border-[#FFD700]/30 transition-all">
                            <img src={item.image} className="w-16 h-16 object-cover rounded-xl border border-slate-100" alt={item.name} />
                            <div className="flex-1 min-w-0">
@@ -289,8 +297,8 @@ export default function ProEcoStorefront() {
                              <div className="space-y-5">
                                 <h4 className="text-[#4A2617] text-xs font-black uppercase tracking-widest opacity-60 italic">Key Benefits:</h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4">
-                                   {benefits.map((benefit: string, bidx: number) => (
-                                      <div key={bidx} className="flex items-center gap-3">
+                                   {benefits.map((benefit: string) => (
+                                      <div key={benefit} className="flex items-center gap-3">
                                          <div className="w-2 h-2 bg-[#FFD700] rounded-full shadow-sm" />
                                          <span className="text-sm font-black text-[#4A2617] uppercase tracking-tight">{benefit}</span>
                                       </div>
@@ -302,7 +310,7 @@ export default function ProEcoStorefront() {
                              <div className="space-y-5">
                                 <h4 className="text-[#4A2617] text-xs font-black uppercase tracking-widest opacity-60 italic">Select Size:</h4>
                                 <div className="flex flex-wrap gap-4">
-                                   {variants.map((v: any) => (
+                                   {variants.map((v: { size: string; price: number }) => (
                                       <button 
                                         key={v.size} 
                                         onClick={() => handleVariantSelect(product.id, v.size)}
@@ -366,7 +374,7 @@ export default function ProEcoStorefront() {
                   <span className="block text-4xl font-black text-[#4A2617] tracking-tighter leading-tight">NATUREPURE</span>
                   <span className="block text-[10px] font-bold text-[#4A2617] text-center opacity-70 tracking-[0.5em] mt-2 italic uppercase">Est. 2026</span>
                </div>
-               <p className="text-orange-50 font-medium text-xl leading-relaxed max-w-md opacity-90 italic">"Delivering the sacred purity of ancient Indian farming directly to your home. 100% Organic. 0% Compromise."</p>
+               <p className="text-orange-100 font-medium text-lg leading-relaxed max-w-md opacity-80 italic">&quot;Bringing the sacred essence of local farms directly to your modern lifestyle. No chemicals, no shortcuts&mdash;just pure love.&quot;</p>
                <div className="flex gap-8">
                   {['Instagram', 'WhatsApp', 'YouTube'].map(s => (
                     <a key={s} href="#" className="text-xs font-black uppercase tracking-[0.3em] hover:text-[#FFD700] transition-colors border-b border-transparent hover:border-[#FFD700] pb-1 font-sans">{s}</a>
