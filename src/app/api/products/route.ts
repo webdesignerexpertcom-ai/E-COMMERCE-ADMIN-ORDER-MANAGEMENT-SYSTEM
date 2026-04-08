@@ -4,7 +4,8 @@ import { supabase } from '@/lib/supabase';
 export const dynamic = 'force-dynamic';
 
 // Sample Fallback Data if Supabase is not connected/empty (Using Let so we can push to it in demo mode)
-let DUMMY_PRODUCTS = [
+// Sample Fallback Data if Supabase is not connected/empty (Using const for immutable dummy data)
+const DUMMY_PRODUCTS = [
   { _id: '1', name: 'Wild Forest Raw Honey', desc: 'Unprocessed & directly from Himalayas', price: 1250.00, oldPrice: 1550.00, tag: '-20%', tagColor: 'bg-rose-500', image: 'https://images.unsplash.com/photo-1587049352847-4d4b1ed74dd4?auto=format&fit=crop&q=80&w=800', status: 'active' },
   { _id: '2', name: 'Extra Virgin Coconut Oil', desc: 'Cold-pressed, unrefined organic oil', price: 850.00, oldPrice: null, tag: 'Bestseller', tagColor: 'bg-indigo-500', image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=800', status: 'active' },
   { _id: '3', name: 'California Premium Almonds', desc: 'Rich in antioxidants & naturally sweet', price: 950.00, oldPrice: 1100.00, tag: '-15%', tagColor: 'bg-rose-500', image: 'https://images.unsplash.com/photo-1508061253366-f7da158b6d46?auto=format&fit=crop&q=80&w=800', status: 'active' },
@@ -50,23 +51,52 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // Map frontend body to Supabase columns
-    // Generate slug from name
-    const slug = body.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(Math.random() * 1000);
+    // 1. Handle Category - Get ID or Create New
+    let categoryId = null;
+    if (body.category) {
+      const { data: catData } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('name', body.category)
+        .single();
+      
+      if (catData) {
+        categoryId = catData.id;
+      } else {
+        // Create category if not exists
+        const catSlug = body.category.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const { data: newCat, error: newCatError } = await supabase
+          .from('categories')
+          .insert([{ name: body.category, slug: catSlug }])
+          .select()
+          .single();
+        
+        if (!newCatError && newCat) {
+          categoryId = newCat.id;
+        }
+      }
+    }
 
-    // Map frontend body to REAL Supabase columns
+    // 2. Generate slug from name
+    const slug = body.name.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '') + '-' + Math.floor(Math.random() * 1000);
+
+    // 3. Map frontend body to REAL Supabase columns
     const productToCreate = {
       name: body.name,
       slug: slug,
       description: body.description,
       price: body.price,
-      discount_price: body.oldPrice,
+      discount_price: body.oldPrice || null,
       stock_quantity: body.stock || 0,
-      images: body.image ? [body.image] : [],
+      images: body.image ? (Array.isArray(body.image) ? body.image : [body.image]) : [],
       sku: body.sku || `SKU-${Math.floor(Math.random() * 10000)}`,
       tag: body.tag || 'New',
       tag_color: body.tag_color || 'bg-emerald-500',
-      status: body.status || 'active'
+      status: body.status || 'active',
+      category_id: categoryId,
+      is_active: body.status === 'active'
     };
 
     const { data: product, error } = await supabase

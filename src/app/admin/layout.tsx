@@ -2,10 +2,12 @@
 
 import React, { useEffect, useState } from 'react';
 import { Sidebar } from '@/components/admin/Sidebar';
-import { Search, Bell, User } from 'lucide-react';
+import { Search, Bell, User, Menu } from 'lucide-react';
 import { KeyboardShortcuts } from '@/components/admin/KeyboardShortcuts';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminLayout({
   children,
@@ -17,6 +19,8 @@ export default function AdminLayout({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const [userName, setUserName] = useState('Sarah Williams');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [environment, setEnvironment] = useState<'production' | 'staging'>('production');
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -76,13 +80,39 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="flex bg-slate-50 min-h-screen text-slate-900 font-sans selection:bg-indigo-600 selection:text-white">
+    <div className="flex bg-slate-50 min-h-screen text-slate-900 font-sans selection:bg-indigo-600 selection:text-white relative">
       <KeyboardShortcuts />
-      <Sidebar />
-      <div className="flex-1 ml-64 flex flex-col min-h-screen overflow-x-hidden">
-        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-40">
+      
+      {/* Sidebar Overlay for Mobile */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[50] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      <div className={cn(
+        "fixed inset-y-0 left-0 z-[60] transform lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <Sidebar onClose={() => setIsSidebarOpen(false)} />
+      </div>
+
+      <div className="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 sticky top-0 z-40">
           <div className="flex items-center gap-4 group">
-            <div className="relative">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 lg:hidden text-slate-500 hover:bg-slate-100 rounded-lg group-active:scale-95 transition-all"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="relative hidden md:block">
               <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
               <input 
                 type="text" 
@@ -98,8 +128,24 @@ export default function AdminLayout({
 
           <div className="flex items-center gap-6">
             <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
-              <button className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white rounded-lg shadow-sm border border-slate-200">Production</button>
-              <button className="px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 transition-colors">Staging</button>
+              <button 
+                onClick={() => setEnvironment('production')}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
+                  environment === 'production' ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                Production
+              </button>
+              <button 
+                onClick={() => setEnvironment('staging')}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-bold rounded-lg transition-all",
+                  environment === 'staging' ? "bg-white text-slate-900 shadow-sm border border-slate-200" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                Staging
+              </button>
             </div>
             
             <div className="h-6 w-[1px] bg-slate-200 mx-2"></div>

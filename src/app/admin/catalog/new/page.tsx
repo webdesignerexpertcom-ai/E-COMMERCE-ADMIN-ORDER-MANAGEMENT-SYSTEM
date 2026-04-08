@@ -64,7 +64,10 @@ export default function NewProductListing() {
     price: '',
     sku: '',
     quantity: '0',
-    status: 'draft'
+    status: 'draft',
+    metaTitle: '',
+    metaDescription: '',
+    discountPrice: ''
   });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -113,11 +116,14 @@ export default function NewProductListing() {
           name: productData.name,
           description: productData.description || 'Verified organic product.',
           price: parseFloat(productData.price),
+          oldPrice: productData.discountPrice ? parseFloat(productData.discountPrice) : null,
           category: productData.category,
           stock: parseInt(productData.quantity) || 0,
           sku: productData.sku || `SKU-${Math.floor(Math.random() * 10000)}`,
           image: previewImage || 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=800',
-          status: productData.status
+          status: productData.status,
+          metaTitle: productData.metaTitle,
+          metaDescription: productData.metaDescription
         })
       });
       
@@ -230,16 +236,29 @@ export default function NewProductListing() {
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Pricing & Inventory Hub</h3>
              </div>
 
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 <div className="space-y-2">
-                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Sales Price ($)</label>
+                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Retail Price ($)</label>
+                   <div className="relative">
+                      <DollarSign className="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input 
+                         type="number" 
+                         placeholder="29.99"
+                         value={productData.price}
+                         onChange={(e) => setProductData({...productData, price: e.target.value})}
+                         className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-[24px] text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none"
+                      />
+                   </div>
+                </div>
+                <div className="space-y-2">
+                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Discount Price ($)</label>
                    <div className="relative">
                       <DollarSign className="w-4 h-4 absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input 
                          type="number" 
                          placeholder="24.99"
-                         value={productData.price}
-                         onChange={(e) => setProductData({...productData, price: e.target.value})}
+                         value={productData.discountPrice}
+                         onChange={(e) => setProductData({...productData, discountPrice: e.target.value})}
                          className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-200 rounded-[24px] text-sm font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none"
                       />
                    </div>
@@ -255,7 +274,7 @@ export default function NewProductListing() {
                    />
                 </div>
                 <div className="space-y-2">
-                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1 font-black text-indigo-600">Initial Quantity</label>
+                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1 font-black text-indigo-600">Stock Count</label>
                    <input 
                       type="number" 
                       placeholder="100"
@@ -379,6 +398,8 @@ export default function NewProductListing() {
                       <option value="Apparel">Lifestyle Apparel</option>
                       <option value="Home">Home Wellness</option>
                       <option value="Kitchen">Kitchen & Dining</option>
+                      <option value="Electronics">Electronics</option>
+                      <option value="Beauty">Beauty & Care</option>
                    </select>
                 </div>
                 <div className="p-5 bg-slate-50 rounded-3xl border border-slate-100 hover:border-indigo-100 transition-all">
@@ -394,6 +415,33 @@ export default function NewProductListing() {
                    </select>
                 </div>
 
+             </div>
+          </section>
+
+          {/* SEO Pro Section */}
+          <section className="bg-white p-10 rounded-[48px] border border-slate-200 shadow-sm space-y-8">
+             <h4 className="text-lg font-black text-slate-900 tracking-tight leading-tight uppercase tracking-tighter">Search Engine (SEO)</h4>
+             <div className="space-y-6">
+                <div className="space-y-2">
+                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Page Title Tag</label>
+                   <input 
+                      type="text" 
+                      placeholder="SEO Optimized Title"
+                      value={productData.metaTitle}
+                      onChange={(e) => setProductData({...productData, metaTitle: e.target.value})}
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-[20px] text-sm font-bold outline-none"
+                   />
+                </div>
+                <div className="space-y-2">
+                   <label className="text-[11px] font-black uppercase text-slate-400 tracking-widest block pl-1">Meta Description</label>
+                   <textarea 
+                      rows={3}
+                      placeholder="Keep it under 160 characters..."
+                      value={productData.metaDescription}
+                      onChange={(e) => setProductData({...productData, metaDescription: e.target.value})}
+                      className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-[24px] text-sm font-bold outline-none resize-none"
+                   />
+                </div>
              </div>
           </section>
         </div>

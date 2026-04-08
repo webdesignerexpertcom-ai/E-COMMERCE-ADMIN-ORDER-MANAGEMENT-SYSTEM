@@ -204,8 +204,8 @@ export default function CatalogPage() {
               <p className="text-sm font-bold text-slate-400 mt-2">Adjust your search parameters or list a new asset.</p>
            </div>
         ) : (
-           <div className="overflow-x-auto min-h-[500px]">
-             <table className="w-full text-left border-collapse min-w-[1250px]">
+           <div className="overflow-x-auto w-full">
+             <table className="w-full text-left border-collapse min-w-[1000px] lg:min-w-full">
                <thead>
                  <tr className="border-b border-slate-100 bg-slate-50/50">
                    <th className="p-8 pl-12 text-[10px] font-black text-slate-400 uppercase tracking-widest">Product Info</th>
