@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 
 const sidebarItems = [
   { name: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
+  { name: 'Stock Intelligence', icon: Activity, href: '/admin/intelligence' },
   { name: 'Orders', icon: ShoppingBag, href: '/admin/orders' },
   { name: 'Catalog', icon: Package, href: '/admin/catalog' },
   { name: 'Inventory Hub', icon: Box, href: '/admin/inventory' },

@@ -46,6 +46,12 @@ export async function GET(req: Request) {
       oldPrice: p.discount_price,
       tagColor: p.tag_color,
       image: p.images?.[0] || '',
+      velocity: p.sales_velocity || 0,
+      leadTime: p.lead_time_days || 7,
+      safetyBuffer: p.safety_buffer_percent || 15,
+      restockStatus: p.restock_status || 'none',
+      incomingStock: p.incoming_stock || 0,
+      min: p.low_stock_threshold || 10,
     }));
 
     if (displayProducts.length < 4) {
@@ -167,6 +173,11 @@ export async function PUT(req: Request) {
     if (updates.tagColor !== undefined) { mappedUpdates.tag_color = updates.tagColor; delete mappedUpdates.tagColor; }
     if (updates.discountPrice !== undefined) { mappedUpdates.discount_price = updates.discountPrice; delete mappedUpdates.discountPrice; }
     if (updates.lowStockThreshold !== undefined) { mappedUpdates.low_stock_threshold = updates.lowStockThreshold; delete mappedUpdates.lowStockThreshold; }
+    if (updates.velocity !== undefined) { mappedUpdates.sales_velocity = updates.velocity; delete mappedUpdates.velocity; }
+    if (updates.leadTime !== undefined) { mappedUpdates.lead_time_days = updates.leadTime; delete mappedUpdates.leadTime; }
+    if (updates.safetyBuffer !== undefined) { mappedUpdates.safety_buffer_percent = updates.safetyBuffer; delete mappedUpdates.safetyBuffer; }
+    if (updates.restockStatus !== undefined) { mappedUpdates.restock_status = updates.restockStatus; delete mappedUpdates.restockStatus; }
+    if (updates.incomingStock !== undefined) { mappedUpdates.incoming_stock = updates.incomingStock; delete mappedUpdates.incomingStock; }
 
     const { data: product, error } = await supabase
       .from('products')
