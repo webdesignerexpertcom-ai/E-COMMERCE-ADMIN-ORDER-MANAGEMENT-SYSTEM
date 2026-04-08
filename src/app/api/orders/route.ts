@@ -40,6 +40,7 @@ export async function POST(req: Request) {
       order_id: `ORD-${Math.floor(Math.random() * 90000) + 10000}`,
       customer_name: body.customerName,
       customer_phone: body.customerPhone,
+      shipping_address: body.shippingAddress || { type: 'manual' },
       total_amount: body.totalAmount,
       items_count: body.itemsCount || 1,
       status: 'pending'

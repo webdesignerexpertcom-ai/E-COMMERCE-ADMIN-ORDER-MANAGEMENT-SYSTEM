@@ -166,6 +166,8 @@ export default function ProEcoStorefront() {
                          if (!customerName) return;
                          const customerPhone = prompt("Enter WhatsApp/Phone Number:");
                          if (!customerPhone) return;
+                         const customerAddress = prompt("Enter Delivery Address (Area/Pincode):");
+                         if (!customerAddress) return;
 
                          try {
                            const res = await fetch('/api/orders', {
@@ -174,6 +176,7 @@ export default function ProEcoStorefront() {
                              body: JSON.stringify({
                                customerName,
                                customerPhone,
+                               shippingAddress: { address: customerAddress },
                                totalAmount: cartTotal,
                                itemsCount: cart.length
                              })
