@@ -412,11 +412,28 @@ export default function StockIntelligenceDashboard() {
                            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">Name</label><input type="text" value={activeItem.name} onChange={(e) => setActiveItem({...activeItem, name: e.target.value})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none focus:bg-white text-lg tracking-tight" /></div>
                            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">SKU Pulse ID</label><input type="text" value={activeItem.sku} onChange={(e) => setActiveItem({...activeItem, sku: e.target.value})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none uppercase focus:bg-white text-lg tracking-tight" /></div>
                         </div>
-                        <div className="grid grid-cols-2 gap-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                            <div className="space-y-3"><label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-indigo-600">Velocity</label><input type="number" step="0.1" value={activeItem.velocity} onChange={(e) => setActiveItem({...activeItem, velocity: Number(e.target.value)})} className="w-full px-8 py-6 bg-indigo-50/30 border border-indigo-100 rounded-[32px] font-black outline-none focus:bg-white text-lg text-indigo-700" /></div>
                            <div className="space-y-3">
-                             <label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">Lifecycle</label>
-                             <button onClick={() => setActiveItem({...activeItem, isArchived: !activeItem.isArchived})} className={cn("w-full px-8 py-6 border-4 rounded-[32px] font-black text-xs uppercase tracking-widest transition-all", activeItem.isArchived ? "bg-rose-50 border-rose-200 text-rose-600" : "bg-emerald-50 border-emerald-200 text-emerald-600")}>{activeItem.isArchived ? 'Archived' : 'Active Deployment'}</button>
+                              <label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest text-rose-600">Inventory Units</label>
+                              <div className="flex gap-4">
+                                <input type="number" value={activeItem.stock} onChange={(e) => setActiveItem({...activeItem, stock: Number(e.target.value)})} className="flex-1 px-8 py-6 bg-rose-50/30 border border-rose-100 rounded-[32px] font-black outline-none focus:bg-white text-lg text-rose-700" />
+                                <button onClick={() => setActiveItem({...activeItem, stock: 0})} className="px-6 bg-rose-600 text-white rounded-[32px] text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-transform active:scale-95 shadow-lg shadow-rose-600/20">Zero Out</button>
+                              </div>
+                           </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                           <div className="space-y-3">
+                              <label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">Restock Status</label>
+                              <select value={activeItem.restockStatus} onChange={(e) => setActiveItem({...activeItem, restockStatus: e.target.value as any})} className="w-full px-8 py-6 bg-slate-50 border border-slate-200 rounded-[32px] font-black outline-none focus:bg-white text-lg">
+                                 <option value="none">None</option>
+                                 <option value="pending">Shipment Ordered</option>
+                                 <option value="received">Stock Received</option>
+                              </select>
+                           </div>
+                           <div className="space-y-3">
+                              <label className="text-[11px] font-black uppercase text-slate-400 pl-6 uppercase tracking-widest">Lifecycle</label>
+                              <button onClick={() => setActiveItem({...activeItem, isArchived: !activeItem.isArchived})} className={cn("w-full px-8 py-6 border-4 rounded-[32px] font-black text-xs uppercase tracking-widest transition-all", activeItem.isArchived ? "bg-rose-50 border-rose-200 text-rose-600" : "bg-emerald-50 border-emerald-200 text-emerald-600")}>{activeItem.isArchived ? 'Archived' : 'Active Deployment'}</button>
                            </div>
                         </div>
                         <button onClick={async () => { if (await handleUpdateProduct(activeItem.id, activeItem)) { triggerToast("NODE RE-PROVISIONED"); setIsEditModalOpen(false); } }} className="w-full py-10 bg-slate-900 text-white rounded-[48px] text-sm font-black uppercase tracking-[0.5em] shadow-4xl hover:bg-indigo-600 transition-all active:scale-95">Commit Topology Change</button>
