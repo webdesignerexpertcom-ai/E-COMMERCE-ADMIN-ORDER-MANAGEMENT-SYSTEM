@@ -20,6 +20,9 @@ const DUMMY_PRODUCTS = [
   { _id: '4', name: 'Black Chia Seeds Pack', desc: 'High fiber, omega-3 superfood core', price: 350.00, oldPrice: null, tag: 'New Arrival', tagColor: 'bg-emerald-500', image: 'https://images.unsplash.com/photo-1585236270275-fc9ce3bd18bd?auto=format&fit=crop&q=80&w=800', status: 'active' },
 ];
 
+// IDs that belong to fallback/demo products (not real DB records)
+const DUMMY_IDS = DUMMY_PRODUCTS.map(p => p._id);
+
 function getEnv(req: Request) {
   return req.headers.get('x-environment') || 'production';
 }
@@ -148,6 +151,11 @@ export async function PUT(req: Request) {
       return NextResponse.json({ success: false, error: 'Product ID is required' }, { status: 400 });
     }
 
+    // Block updates to demo/fallback products
+    if (DUMMY_IDS.includes(id)) {
+      return NextResponse.json({ success: false, error: 'This is a demo product and cannot be edited. Add a real product via the Catalog to manage it.' }, { status: 400 });
+    }
+
     const mappedUpdates: Record<string, unknown> = { ...updates };
     // Map camelCase client fields -> snake_case Supabase columns
     if (updates.oldPrice !== undefined) { mappedUpdates.discount_price = updates.oldPrice; delete mappedUpdates.oldPrice; }
@@ -168,6 +176,9 @@ export async function PUT(req: Request) {
       .single();
 
     if (error) throw error;
+    if (!product) {
+      return NextResponse.json({ success: false, error: 'Product not found in database. It may be a demo entry.' }, { status: 404 });
+    }
 
     // Log Warehouse Event if stock was updated
     if (updates.stock !== undefined) {

@@ -37,6 +37,7 @@ interface InventoryItem {
   variants: Record<string, unknown>[];
   velocity: number | string;
   days_to_out: number;
+  isDemo?: boolean;
 }
 
 export default function InventoryHub() {
@@ -81,6 +82,7 @@ export default function InventoryHub() {
           const actualStock = typeof p.stock_quantity !== 'undefined' ? p.stock_quantity : (typeof p.stock !== 'undefined' ? p.stock : 0);
           const threshold = p.low_stock_threshold || 10;
           
+          const isDemo = ['1','2','3','4'].includes(p._id);
           return {
             id: p._id,
             name: p.name,
@@ -90,8 +92,9 @@ export default function InventoryHub() {
             status: actualStock === 0 ? 'out-of-stock' : actualStock < threshold ? 'low-stock' : 'in-stock',
             price: `₹${p.price?.toLocaleString('en-IN') || '0.00'}`,
             variants: p.variants || [],
-            velocity: p.velocity || (Math.random() * 10).toFixed(1), // Units/day
-            days_to_out: actualStock > 0 ? Math.ceil(actualStock / (p.velocity || 5)) : 0
+            velocity: p.velocity || (Math.random() * 10).toFixed(1),
+            days_to_out: actualStock > 0 ? Math.ceil(actualStock / (p.velocity || 5)) : 0,
+            isDemo
           };
         });
         setInventory(mapped);
@@ -673,6 +676,11 @@ export default function InventoryHub() {
                     </p>
                   </td>
                   <td className="p-8 pr-12 text-right">
+                    {item.isDemo ? (
+                      <span className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-400 rounded-[16px] text-[10px] font-black uppercase tracking-widest border border-slate-200">
+                        Demo Product
+                      </span>
+                    ) : (
                     <div className="flex items-center justify-end gap-3">
                       <div className="flex items-center bg-white border-2 border-slate-200 rounded-[24px] p-1.5 shadow-sm gap-2">
                         <button 
@@ -705,6 +713,7 @@ export default function InventoryHub() {
                         <Edit2 className="w-6 h-6" />
                       </button>
                     </div>
+                    )}
                   </td>
                 </tr>
               ))}
