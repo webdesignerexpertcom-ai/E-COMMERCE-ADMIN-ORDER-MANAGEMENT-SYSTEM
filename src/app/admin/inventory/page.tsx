@@ -540,14 +540,14 @@ export default function InventoryHub() {
             <Package className="w-5 h-5" />
             <span className="text-[10px] uppercase tracking-widest">Total SKUs Active</span>
           </div>
-          <h2 className="text-4xl font-black text-emerald-900 tracking-tight leading-none">{inventory.length} <span className="text-sm font-bold text-emerald-600 ml-1 opacity-70 tracking-tighter italic font-black uppercase">+12 this month</span></h2>
+          <h2 className="text-4xl font-black text-emerald-900 tracking-tight leading-none">{inventory.filter(i => !i.isDemo).length} <span className="text-sm font-bold text-emerald-600 ml-1 opacity-70 tracking-tighter italic font-black uppercase">+12 this month</span></h2>
         </div>
         <div className="bg-rose-50 border border-rose-100 p-8 rounded-[40px] shadow-sm border-2">
           <div className="flex items-center gap-3 text-rose-600 mb-2 font-black italic tracking-tighter">
             <AlertTriangle className="w-5 h-5" />
             <span className="text-[10px] uppercase tracking-widest">Low Stock Signal</span>
           </div>
-          <h2 className="text-4xl font-black text-rose-900 tracking-tight leading-none">{inventory.filter(i => i.status !== 'in-stock').length} <span className="text-sm font-bold text-rose-600 ml-1 opacity-70 tracking-tighter italic font-black uppercase text-rose-500">Requires Attention</span></h2>
+          <h2 className="text-4xl font-black text-rose-900 tracking-tight leading-none">{inventory.filter(i => !i.isDemo && i.status !== 'in-stock').length} <span className="text-sm font-bold text-rose-600 ml-1 opacity-70 tracking-tighter italic font-black uppercase text-rose-500">Requires Attention</span></h2>
         </div>
         <div className="bg-slate-900 p-8 rounded-[40px] border-4 border-indigo-600 shadow-2xl text-center flex flex-col items-center justify-center">
           <div className="flex items-center gap-3 text-indigo-400 mb-2 font-black italic tracking-tighter">
