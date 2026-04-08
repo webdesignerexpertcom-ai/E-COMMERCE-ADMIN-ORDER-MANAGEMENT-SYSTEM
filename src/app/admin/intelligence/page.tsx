@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
-  Plus, Search, Package, Check, X, Bell, Clock, 
-  History, ChevronRight, Layout, Settings, Flame, DollarSign, 
-  Download, Archive, Eye, EyeOff, PieChart, Home, Monitor, Zap, Truck
+  Plus, Search, Package, Check, X, 
+  History, ChevronRight, Flame, DollarSign, 
+  Download, Eye, EyeOff, PieChart, Monitor, Zap, Truck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { omsFetch } from '@/lib/api';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import Image from 'next/image';
 
 interface ProductIntelligence {
   id: string;
@@ -55,7 +56,13 @@ export default function StockIntelligenceDashboard() {
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
 
-  const fetchProducts = async () => {
+  const triggerToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setIsToastOpen(true);
+    setTimeout(() => setIsToastOpen(false), 3000);
+  }, []);
+
+  const fetchProducts = useCallback(async () => {
     try {
       const res = await omsFetch('/api/products');
       const data = await res.json();
@@ -75,9 +82,9 @@ export default function StockIntelligenceDashboard() {
         })));
       }
     } catch (err) { console.error(err); }
-  };
+  }, []);
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
   const handleUpdateProduct = async (id: string, updates: Partial<ProductIntelligence>) => {
     try {
@@ -87,7 +94,7 @@ export default function StockIntelligenceDashboard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(isNew ? updates : { id, ...updates })
       });
-      const data = await res.json();
+      const data: { success: boolean, error?: string } = await res.json();
       if (data.success) {
         fetchProducts();
         return true;
@@ -96,12 +103,6 @@ export default function StockIntelligenceDashboard() {
       }
     } catch (err) { console.error(err); triggerToast("NETWORK ERROR"); }
     return false;
-  };
-
-  const triggerToast = (msg: string) => {
-    setToastMessage(msg);
-    setIsToastOpen(true);
-    setTimeout(() => setIsToastOpen(false), 3000);
   };
 
   const calculateIntelligence = (p: ProductIntelligence) => {
@@ -129,8 +130,8 @@ export default function StockIntelligenceDashboard() {
         return matchesSearch && matchesCategory && matchesArchive;
       })
       .sort((a, b) => {
-        const priority = { 'OUT OF STOCK': 0, 'CRITICAL': 1, 'LOW STOCK': 2, 'HEALTHY': 3 };
-        return priority[calculateIntelligence(a).status] - priority[calculateIntelligence(b).status];
+        const prio: Record<string, number> = { 'OUT OF STOCK': 0, 'CRITICAL': 1, 'LOW STOCK': 2, 'HEALTHY': 3 };
+        return prio[calculateIntelligence(a).status] - prio[calculateIntelligence(b).status];
       });
   }, [products, searchTerm, activeCategory, showArchived]);
 
@@ -180,7 +181,7 @@ export default function StockIntelligenceDashboard() {
             <Download className="w-6 h-6" />
           </button>
           <button 
-            onClick={() => { setActiveItem({ id: '', name: '', sku: '', category: 'General', stock: 0, min: 10, velocity: 1.0, leadTime: 7, safetyBuffer: 15, restockStatus: 'none', incomingStock: 0, isArchived: false } as any); setIsEditModalOpen(true); }}
+            onClick={() => { setActiveItem({ id: '', name: '', sku: '', category: 'General', stock: 0, min: 10, velocity: 1.0, leadTime: 7, safetyBuffer: 15, restockStatus: 'none', incomingStock: 0, isArchived: false }); setIsEditModalOpen(true); }}
             className="px-8 h-[64px] bg-slate-900 text-white rounded-[24px] shadow-xl shadow-slate-900/10 text-xs font-black uppercase tracking-widest hover:bg-indigo-600 transition-all flex items-center gap-3"
           >
             <Plus className="w-5 h-5" /> Provision SKU
@@ -240,7 +241,7 @@ export default function StockIntelligenceDashboard() {
                   >
                       <div className="flex items-center justify-between">
                         <div className="w-20 h-20 bg-slate-50 rounded-[32px] border border-slate-100 flex items-center justify-center font-black overflow-hidden relative shadow-inner">
-                            {p.image ? <img src={p.image} className="w-full h-full object-cover" alt="" /> : <Package className="w-8 h-8 text-slate-200" />}
+                            {p.image ? <Image src={p.image} className="w-full h-full object-cover" alt="" width={80} height={80} unoptimized /> : <Package className="w-8 h-8 text-slate-200" />}
                         </div>
                         <div className="text-right">
                             <div className={cn("inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest", 

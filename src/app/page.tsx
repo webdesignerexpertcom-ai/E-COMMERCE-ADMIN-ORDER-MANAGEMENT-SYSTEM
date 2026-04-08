@@ -160,12 +160,35 @@ export default function ProEcoStorefront() {
                     </button>
                     
                     <button 
-                       onClick={() => {
-                         const name = prompt("Enter full name for Direct Order:");
-                         if (!name) return;
-                         window.alert(`Thank you ${name}! Standard Checkout protocol initiated. Our team will contact you for payment verification.`);
-                         setCart([]);
-                         setIsCartOpen(false);
+                       onClick={async () => {
+                         if (cart.length === 0) return;
+                         const customerName = prompt("Enter full name for Direct Order:");
+                         if (!customerName) return;
+                         const customerPhone = prompt("Enter WhatsApp/Phone Number:");
+                         if (!customerPhone) return;
+
+                         try {
+                           const res = await fetch('/api/orders', {
+                             method: 'POST',
+                             headers: { 'Content-Type': 'application/json' },
+                             body: JSON.stringify({
+                               customerName,
+                               customerPhone,
+                               totalAmount: cartTotal,
+                               itemsCount: cart.length
+                             })
+                           });
+                           const data = await res.json();
+                           if (data.success) {
+                             window.alert(`Thank you ${customerName}! Your order ${data.data.order_id} has been placed. Our team will contact you shortly.`);
+                             setCart([]);
+                             setIsCartOpen(false);
+                           } else {
+                             window.alert("Checkout failed: " + data.error);
+                           }
+                         } catch (err) {
+                           window.alert("Network error during checkout.");
+                         }
                        }}
                        disabled={cart.length === 0}
                        className="w-full py-5 bg-slate-900 border-2 border-slate-900 text-white hover:bg-white hover:text-slate-900 disabled:bg-slate-200 disabled:text-slate-400 disabled:border-transparent text-white rounded-[24px] font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl active:scale-[0.98]"
