@@ -62,10 +62,11 @@ export default function StockIntelligenceDashboard() {
       const res = await omsFetch('/api/products');
       const data = await res.json();
       if (data.success) {
-        setProducts(data.data.map((p: ProductIntelligence & { _id?: string }) => ({
+        setProducts(data.data.map((p: any) => ({
           ...p,
           id: p._id || p.id,
-          velocity: parseFloat(p.velocity?.toString() || (Math.random() * 5 + 1).toFixed(1)),
+          stock: Number(p.stock || 0),
+          velocity: parseFloat(p.velocity?.toString() || (Math.random() * 2 + 0.5).toFixed(1)),
           leadTime: parseInt(p.leadTime?.toString() || '7'),
           safetyBuffer: 15,
           restockStatus: p.restockStatus || 'none',
@@ -103,15 +104,22 @@ export default function StockIntelligenceDashboard() {
   };
 
   const calculateIntelligence = (p: ProductIntelligence) => {
-    const demandDuringLead = (p.velocity || 0) * (p.leadTime || 7);
+    const stock = Number(p.stock || 0);
+    const velocity = Number(p.velocity || 0.1); // Avoid 0
+    const leadTime = Number(p.leadTime || 7);
+    const price = Number(p.price || 0);
+
+    const demandDuringLead = velocity * leadTime;
     const reorderPoint = Math.ceil(demandDuringLead + (demandDuringLead * 0.15));
-    const daysToStockout = (p.velocity || 0) > 0 ? (p.stock / p.velocity) : 999;
+    const daysToStockout = velocity > 0 ? (stock / velocity) : 999;
+    
     let status: 'OUT OF STOCK' | 'CRITICAL' | 'LOW STOCK' | 'HEALTHY' = 'HEALTHY';
-    if (p.stock <= 0) status = 'OUT OF STOCK';
-    else if (p.stock < ((p.velocity || 0) * 2)) status = 'CRITICAL';
-    else if (p.stock < reorderPoint) status = 'LOW STOCK';
-    const projectedLoss = (status !== 'HEALTHY' && (p.velocity || 0) > 0) ? ((p.velocity || 0) * (p.price || 0) * (p.leadTime || 7)).toFixed(0) : '0';
-    return { reorderPoint, daysToStockout, status, projectedLoss };
+    if (stock <= 0) status = 'OUT OF STOCK';
+    else if (stock < (velocity * 2)) status = 'CRITICAL';
+    else if (stock < reorderPoint) status = 'LOW STOCK';
+    
+    const projectedLoss = (status !== 'HEALTHY' && velocity > 0) ? (velocity * price * leadTime).toFixed(0) : '0';
+    return { reorderPoint, daysToStockout, status, projectedLoss, stock, velocity };
   };
 
   const filteredProducts = useMemo(() => {
@@ -335,23 +343,25 @@ export default function StockIntelligenceDashboard() {
                          <div className="grid grid-cols-2 gap-4">
                             <div className="p-5 bg-slate-50 rounded-[32px] border border-slate-100">
                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Stock</p>
-                               <span className="text-2xl font-black text-slate-900">{p.stock}</span>
+                               <span className="text-2xl font-black text-slate-900">{intel.stock}</span>
                             </div>
                             <div className="p-5 bg-slate-50 rounded-[32px] border border-slate-100">
                                <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1">Out In</p>
-                               <span className={cn("text-2xl font-black", isCritical ? "text-rose-500" : "text-indigo-600")}>{Math.floor(intel.daysToStockout)}d</span>
+                               <span className={cn("text-2xl font-black", isCritical ? "text-rose-500" : "text-indigo-600")}>
+                                 {Math.floor(intel.daysToStockout)}d
+                               </span>
                             </div>
                          </div>
 
                          <div className="space-y-3">
                             <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                                <span className="text-slate-400">Inventory Level</span>
-                               <span className="text-slate-900">{Math.round((p.stock / (intel.reorderPoint * 2 || 1)) * 100)}%</span>
+                               <span className="text-slate-900">{Math.round((intel.stock / (intel.reorderPoint * 2 || 1)) * 100)}%</span>
                             </div>
                             <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200/50 p-0.5 shadow-inner">
                                <div 
                                  className={cn("h-full rounded-full transition-all duration-700", isCritical ? "bg-rose-500" : "bg-indigo-600")} 
-                                 style={{ width: `${Math.min(100, (p.stock / (intel.reorderPoint * 2 || 1)) * 100)}%` }} 
+                                 style={{ width: `${Math.min(100, (intel.stock / (intel.reorderPoint * 2 || 1)) * 100)}%` }} 
                                />
                             </div>
                          </div>
