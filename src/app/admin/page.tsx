@@ -20,12 +20,38 @@ import { motion, AnimatePresence } from 'framer-motion';
 export default function AdminDashboard() {
   const [isToastOpen, setIsToastOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [loadingAlerts, setLoadingAlerts] = useState(true);
   
-  const [alerts, setAlerts] = useState([
-     { id: '1', item: 'Variant: XL Blue Shirt', level: 'Critical: 2 left', active: true },
-     { id: '2', item: 'Variant: Ceramic Mug Black', level: 'Action: 0 left', active: true },
-     { id: '3', item: 'Variant: Organic Matcha', level: 'Low: 4 left', active: true },
-  ]);
+  const [alerts, setAlerts] = useState<any[]>([]);
+
+  const fetchAlerts = async () => {
+    try {
+      const env = localStorage.getItem('oms-environment') || 'production';
+      const res = await fetch('/api/products', {
+        headers: { 'x-environment': env }
+      });
+      const result = await res.json();
+      if (result.success) {
+        const lowStock = result.data
+          .filter((p: any) => (p.stock_quantity || 0) < 10)
+          .map((p: any) => ({
+            id: p._id,
+            item: p.name,
+            level: `Critical: ${p.stock_quantity || 0} left`,
+            active: true
+          }));
+        setAlerts(lowStock.slice(0, 3)); // Show top 3 critical
+      }
+    } catch (err) {
+      console.error("Failed to fetch alerts:", err);
+    } finally {
+      setLoadingAlerts(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchAlerts();
+  }, []);
 
   const triggerToast = (msg: string) => {
      setToastMessage(msg);
@@ -33,9 +59,23 @@ export default function AdminDashboard() {
      setTimeout(() => setIsToastOpen(false), 3000);
   };
 
-  const handleRestock = (id: string, name: string) => {
-     triggerToast(`Restock Triggered: ${name}`);
+  const handleRestock = async (id: string, name: string) => {
+     triggerToast(`Restock Command: ${name}`);
      setAlerts(alerts.map(a => a.id === id ? { ...a, active: false } : a));
+
+     try {
+        const env = localStorage.getItem('oms-environment') || 'production';
+        await fetch('/api/products', {
+           method: 'PUT',
+           headers: { 'Content-Type': 'application/json', 'x-environment': env },
+           body: JSON.stringify({ id, stock: 50 }) // Default restock to 50
+        });
+        triggerToast(`Restock Successful: ${name}`);
+        fetchAlerts();
+     } catch (err) {
+        console.error("Restock failed:", err);
+        triggerToast("Sync Error: Failed to restock.");
+     }
   };
 
   const stats = [
@@ -99,7 +139,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">System Overview</h1>
-          <p className="text-slate-500 font-medium">Welcome back, Sarah. Here's what's happening today.</p>
+          <p className="text-slate-500 font-medium">Welcome back, Sarah. Here&apos;s what&apos;s happening today.</p>
         </div>
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">
@@ -189,7 +229,15 @@ export default function AdminDashboard() {
             <AlertTriangle className="w-5 h-5 text-rose-500" />
             <h3 className="font-bold text-slate-900 text-lg">Stock Alerts</h3>
           </div>
-          <div className="space-y-4">
+          <div className="space-y-4 relative min-h-[100px]">
+            {loadingAlerts && (
+               <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center z-10">
+                  <div className="w-6 h-6 border-2 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
+               </div>
+            )}
+            {alerts.length === 0 && !loadingAlerts && (
+               <p className="text-xs text-slate-400 text-center py-8 italic font-medium">All systems green. No shortages detected.</p>
+            )}
             {alerts.map((alert) => (
               <div key={alert.id} className="flex items-center gap-4 p-4 bg-rose-50/50 border border-rose-100 rounded-2xl">
                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-rose-200 shadow-sm relative">
