@@ -1,4 +1,4 @@
-﻿/* eslint-disable */
+/* eslint-disable */
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -131,7 +131,7 @@ export default function ProEcoStorefront() {
 
   const handleWhatsAppCheckout = () => {
     const orderDetails = cart.map(item => `- ${item.name} (${item.size || 'Standard'}) x${item.quantity}`).join('%0A');
-    const message = `I'd like to order:%0A${orderDetails}%0A%0ATotal: â‚¹${cartTotal.toFixed(2)}`;
+    const message = `I'd like to order:%0A${orderDetails}%0A%0ATotal: ₹${cartTotal.toFixed(2)}`;
     window.open(`https://wa.me/919492456488?text=${message}`, '_blank');
   };
 
@@ -152,6 +152,10 @@ export default function ProEcoStorefront() {
         </div>
 
         <div className="flex items-center gap-4">
+           <button onClick={() => router.push('/admin/login')} className="hidden sm:flex border-2 border-[#4A2617] text-[#4A2617] px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest hover:bg-[#4A2617] hover:text-[#FFD700] transition-colors">
+              Admin Login
+           </button>
+           
            <button onClick={() => setIsCartOpen(true)} className="relative p-3 text-[#4A2617] hover:scale-110 transition-transform">
               <ShoppingBag className="w-7 h-7" />
               <AnimatePresence>
@@ -228,7 +232,7 @@ export default function ProEcoStorefront() {
                                     <span className="w-8 text-center text-xs font-black">{item.quantity}</span>
                                     <button onClick={() => updateQuantity(item.id, item.size, 1)} className="w-6 h-6 flex items-center justify-center font-black text-[#4A2617] hover:bg-[#FFD700] rounded-full transition-colors">+</button>
                                  </div>
-                                 <p className="font-black text-[#4A2617] text-sm">â‚¹{(Number(item.price) * item.quantity).toFixed(2)}</p>
+                                 <p className="font-black text-[#4A2617] text-sm">₹{(Number(item.price) * item.quantity).toFixed(2)}</p>
                               </div>
                            </div>
                            <button onClick={() => removeFromCart(item.id, item.size)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
@@ -239,7 +243,7 @@ export default function ProEcoStorefront() {
                 <div className="p-8 border-t border-slate-100 space-y-4 bg-slate-50/50">
                    <div className="flex items-center justify-between">
                       <span className="text-xs font-black uppercase text-slate-400 tracking-widest">Grand Total</span>
-                      <span className="text-2xl font-black text-[#4A2617] tracking-tighter">â‚¹{cartTotal.toFixed(2)}</span>
+                      <span className="text-2xl font-black text-[#4A2617] tracking-tighter">₹{cartTotal.toFixed(2)}</span>
                    </div>
                    <button onClick={() => router.push('/checkout')} disabled={cart.length === 0} className="w-full py-5 bg-[#4A2617] text-white rounded-2xl font-black uppercase tracking-widest shadow-xl hover:scale-[1.02] active:scale-95 transition-all text-sm disabled:bg-slate-200 disabled:cursor-not-allowed">Proceed to Checkout</button>
                    <button onClick={handleWhatsAppCheckout} disabled={cart.length === 0} className="w-full py-4 border-2 border-[#25D366] text-[#25D366] rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#25D366] hover:text-white transition-all text-xs disabled:border-slate-200 disabled:text-slate-300"><MessageCircle className="w-4 h-4" /> WhatsApp Order</button>
@@ -323,7 +327,7 @@ export default function ProEcoStorefront() {
                                         )}
                                       >
                                          <span className="text-sm font-black text-[#4A2617] uppercase tracking-tighter">{v.size}</span>
-                                         <span className="text-[11px] font-extrabold mt-1.5 opacity-60">â‚¹{v.price}</span>
+                                         <span className="text-[11px] font-extrabold mt-1.5 opacity-60">₹{v.price}</span>
                                          {selectedSize === v.size && <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-[#FFD700] rounded-full" />}
                                       </button>
                                    ))}
@@ -375,7 +379,7 @@ export default function ProEcoStorefront() {
                   <span className="block text-4xl font-black text-[#4A2617] tracking-tighter leading-tight">NATUREPURE</span>
                   <span className="block text-[10px] font-bold text-[#4A2617] text-center opacity-70 tracking-[0.5em] mt-2 italic uppercase">Est. 2026</span>
                </div>
-               <p className="text-orange-100 font-medium text-lg leading-relaxed max-w-md opacity-80 italic">&quot;Bringing the sacred essence of local farms directly to your modern lifestyle. No chemicals, no shortcuts&mdash;just pure love.&quot;</p>
+               <p className="text-orange-100 font-medium text-lg leading-relaxed max-w-md opacity-80 italic">&quot;Bringing the sacred essence of local farms directly to your modern lifestyle. No chemicals, no shortcuts—just pure love.&quot;</p>
                <div className="flex gap-8">
                   {['Instagram', 'WhatsApp', 'YouTube'].map(s => (
                     <a key={s} href="#" className="text-xs font-black uppercase tracking-[0.3em] hover:text-[#FFD700] transition-colors border-b border-transparent hover:border-[#FFD700] pb-1 font-sans">{s}</a>

@@ -1,4 +1,4 @@
-﻿/* eslint-disable */
+/* eslint-disable */
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -95,7 +95,7 @@ export default function OrderManagement() {
           email: o.customer_email || 'n/a',
           address: typeof o.shipping_address === 'string' ? o.shipping_address : (o.shipping_address?.address || o.shipping_address?.street || 'Manual Entry'),
           status: o.status,
-          total: `â‚¹${parseFloat(o.total_amount).toLocaleString('en-IN')}`,
+          total: `₹${parseFloat(o.total_amount).toLocaleString('en-IN')}`,
           date: new Date(o.created_at).toLocaleString(),
           items: o.items_count
         }));
